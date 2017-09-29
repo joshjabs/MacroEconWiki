@@ -55,16 +55,9 @@ class ApiQueryProtectedTitles extends ApiQueryGeneratorBase {
 
 		$prop = array_flip( $params['prop'] );
 		$this->addFieldsIf( 'pt_user', isset( $prop['user'] ) || isset( $prop['userid'] ) );
+		$this->addFieldsIf( 'pt_reason', isset( $prop['comment'] ) || isset( $prop['parsedcomment'] ) );
 		$this->addFieldsIf( 'pt_expiry', isset( $prop['expiry'] ) );
 		$this->addFieldsIf( 'pt_create_perm', isset( $prop['level'] ) );
-
-		if ( isset( $prop['comment'] ) || isset( $prop['parsedcomment'] ) ) {
-			$commentStore = new CommentStore( 'pt_reason' );
-			$commentQuery = $commentStore->getJoin();
-			$this->addTables( $commentQuery['tables'] );
-			$this->addFields( $commentQuery['fields'] );
-			$this->addJoinConds( $commentQuery['joins'] );
-		}
 
 		$this->addTimestampWhereRange( 'pt_timestamp', $params['dir'], $params['start'], $params['end'] );
 		$this->addWhereFld( 'pt_namespace', $params['namespace'] );
@@ -134,13 +127,11 @@ class ApiQueryProtectedTitles extends ApiQueryGeneratorBase {
 				}
 
 				if ( isset( $prop['comment'] ) ) {
-					$vals['comment'] = $commentStore->getComment( $row )->text;
+					$vals['comment'] = $row->pt_reason;
 				}
 
 				if ( isset( $prop['parsedcomment'] ) ) {
-					$vals['parsedcomment'] = Linker::formatComment(
-						$commentStore->getComment( $row )->text, $titles
-					);
+					$vals['parsedcomment'] = Linker::formatComment( $row->pt_reason, $title );
 				}
 
 				if ( isset( $prop['expiry'] ) ) {

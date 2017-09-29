@@ -39,8 +39,7 @@ abstract class LogFormatterTestCase extends MediaWikiLangTestCase {
 			'log_namespace' => isset( $data['namespace'] ) ? $data['namespace'] : NS_MAIN,
 			'log_title' => isset( $data['title'] ) ? $data['title'] : 'Main_Page',
 			'log_page' => isset( $data['page'] ) ? $data['page'] : 0,
-			'log_comment_text' => isset( $data['comment'] ) ? $data['comment'] : '',
-			'log_comment_data' => null,
+			'log_comment' => isset( $data['comment'] ) ? $data['comment'] : '',
 			'log_params' => $legacy
 				? LogPage::makeParamBlob( $data['params'] )
 				: LogEntryBase::makeParamBlob( $data['params'] ),

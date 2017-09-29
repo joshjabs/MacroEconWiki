@@ -192,26 +192,27 @@ class HistoryAction extends FormlessAction {
 
 		// Add the general form
 		$action = htmlspecialchars( wfScript() );
-		$content = Html::hidden( 'title', $this->getTitle()->getPrefixedDBkey() ) . "\n";
-		$content .= Html::hidden( 'action', 'history' ) . "\n";
-		$content .= Xml::dateMenu(
-			( $year == null ? MWTimestamp::getLocalInstance()->format( 'Y' ) : $year ),
-			$month
-		) . '&#160;';
-		$content .= $tagSelector ? ( implode( '&#160;', $tagSelector ) . '&#160;' ) : '';
-		$content .= $checkDeleted . Html::submitButton(
-			$this->msg( 'historyaction-submit' )->text(),
-			[],
-			[ 'mw-ui-progressive' ]
-		);
 		$out->addHTML(
 			"<form action=\"$action\" method=\"get\" id=\"mw-history-searchform\">" .
 			Xml::fieldset(
 				$this->msg( 'history-fieldset-title' )->text(),
-				$content,
+				false,
 				[ 'id' => 'mw-history-search' ]
 			) .
-			'</form>'
+			Html::hidden( 'title', $this->getTitle()->getPrefixedDBkey() ) . "\n" .
+			Html::hidden( 'action', 'history' ) . "\n" .
+			Xml::dateMenu(
+				( $year == null ? MWTimestamp::getLocalInstance()->format( 'Y' ) : $year ),
+				$month
+			) . '&#160;' .
+			( $tagSelector ? ( implode( '&#160;', $tagSelector ) . '&#160;' ) : '' ) .
+			$checkDeleted .
+			Html::submitButton(
+				$this->msg( 'historyaction-submit' )->text(),
+				[],
+				[ 'mw-ui-progressive' ]
+			) . "\n" .
+			'</fieldset></form>'
 		);
 
 		Hooks::run( 'PageHistoryBeforeList', [ &$this->page, $this->getContext() ] );
@@ -779,11 +780,9 @@ class HistoryPager extends ReverseChronologicalPager {
 			$s .= ' <span class="mw-changeslist-separator">. .</span> ' . $s2;
 		}
 
-		$attribs = [ 'data-mw-revid' => $rev->getId() ];
+		Hooks::run( 'PageHistoryLineEnding', [ $this, &$row, &$s, &$classes ] );
 
-		Hooks::run( 'PageHistoryLineEnding', [ $this, &$row, &$s, &$classes, &$attribs ] );
-		$attribs = wfArrayFilterByKey( $attribs, [ Sanitizer::class, 'isReservedDataAttribute' ] );
-
+		$attribs = [];
 		if ( $classes ) {
 			$attribs['class'] = implode( ' ', $classes );
 		}

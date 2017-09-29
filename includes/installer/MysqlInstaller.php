@@ -51,7 +51,7 @@ class MysqlInstaller extends DatabaseInstaller {
 
 	public $supportedEngines = [ 'InnoDB', 'MyISAM' ];
 
-	public $minimumVersion = '5.5.8';
+	public $minimumVersion = '5.0.3';
 
 	public $webUserPrivs = [
 		'DELETE',
@@ -223,7 +223,6 @@ class MysqlInstaller extends DatabaseInstaller {
 
 	/**
 	 * @param string $s
-	 * @param string $escapeChar
 	 * @return string
 	 */
 	protected function escapeLikeInternal( $s, $escapeChar = '`' ) {
@@ -276,7 +275,7 @@ class MysqlInstaller extends DatabaseInstaller {
 		if ( !$status->isOK() ) {
 			return false;
 		}
-		/** @var Database $conn */
+		/** @var $conn Database */
 		$conn = $status->value;
 
 		// Get current account name
@@ -343,8 +342,6 @@ class MysqlInstaller extends DatabaseInstaller {
 	/**
 	 * Convert a wildcard (as used in LIKE) to a regex
 	 * Slashes are escaped, slash terminators included
-	 * @param string $wildcard
-	 * @return string
 	 */
 	protected function likeToRegex( $wildcard ) {
 		$r = preg_quote( $wildcard, '/' );

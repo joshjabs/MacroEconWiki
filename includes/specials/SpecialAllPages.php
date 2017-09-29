@@ -44,6 +44,8 @@ class SpecialAllPages extends IncludableSpecialPage {
 	protected $nsfromMsg = 'allpagesfrom';
 
 	/**
+	 * Constructor
+	 *
 	 * @param string $name Name of the special page, as seen in links and URLs (default: 'Allpages')
 	 */
 	function __construct( $name = 'Allpages' ) {
@@ -341,7 +343,7 @@ class SpecialAllPages extends IncludableSpecialPage {
 	/**
 	 * @param int $ns The namespace of the article
 	 * @param string $text The name of the article
-	 * @return array|null [ int namespace, string dbkey, string pagename ] or null on error
+	 * @return array( int namespace, string dbkey, string pagename ) or null on error
 	 */
 	protected function getNamespaceKeyAndText( $ns, $text ) {
 		if ( $text == '' ) {

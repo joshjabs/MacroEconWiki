@@ -49,7 +49,7 @@ class HashConfig implements Config, MutableConfig {
 	}
 
 	/**
-	 * @inheritDoc
+	 * @see Config::get
 	 */
 	public function get( $name ) {
 		if ( !$this->has( $name ) ) {
@@ -60,8 +60,7 @@ class HashConfig implements Config, MutableConfig {
 	}
 
 	/**
-	 * @inheritDoc
-	 * @since 1.24
+	 * @see Config::has
 	 */
 	public function has( $name ) {
 		return array_key_exists( $name, $this->settings );
@@ -69,8 +68,6 @@ class HashConfig implements Config, MutableConfig {
 
 	/**
 	 * @see MutableConfig::set
-	 * @param string $name
-	 * @param mixed $value
 	 */
 	public function set( $name, $value ) {
 		$this->settings[$name] = $value;

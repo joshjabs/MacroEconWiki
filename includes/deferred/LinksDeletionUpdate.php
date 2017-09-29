@@ -29,7 +29,7 @@ use Wikimedia\Rdbms\IDatabase;
 class LinksDeletionUpdate extends DataUpdate implements EnqueueableDataUpdate {
 	/** @var WikiPage */
 	protected $page;
-	/** @var int */
+	/** @var integer */
 	protected $pageId;
 	/** @var string */
 	protected $timestamp;
@@ -39,7 +39,7 @@ class LinksDeletionUpdate extends DataUpdate implements EnqueueableDataUpdate {
 
 	/**
 	 * @param WikiPage $page Page we are updating
-	 * @param int|null $pageId ID of the page we are updating [optional]
+	 * @param integer|null $pageId ID of the page we are updating [optional]
 	 * @param string|null $timestamp TS_MW timestamp of deletion
 	 * @throws MWException
 	 */
@@ -106,11 +106,7 @@ class LinksDeletionUpdate extends DataUpdate implements EnqueueableDataUpdate {
 				__METHOD__
 			);
 			if ( $row ) {
-				$cat = Category::newFromRow( $row, $title );
-				// T166757: do the update after the main job DB commit
-				DeferredUpdates::addCallableUpdate( function () use ( $cat ) {
-					$cat->refreshCounts();
-				} );
+				Category::newFromRow( $row, $title )->refreshCounts();
 			}
 		}
 

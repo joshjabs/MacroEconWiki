@@ -33,7 +33,7 @@ use MediaWiki\MediaWikiServices;
  *
  * @ingroup SpecialPage
  */
-class SpecialPage implements MessageLocalizer {
+class SpecialPage {
 	// The canonical name of this special page
 	// Also used for the default <h1> heading, @see getDescription()
 	protected $mName;
@@ -383,7 +383,7 @@ class SpecialPage implements MessageLocalizer {
 			return true;
 		} elseif ( $securityStatus === AuthManager::SEC_REAUTH ) {
 			$request = $this->getRequest();
-			$title = self::getTitleFor( 'Userlogin' );
+			$title = SpecialPage::getTitleFor( 'Userlogin' );
 			$query = [
 				'returnto' => $this->getFullTitle()->getPrefixedDBkey(),
 				'returntoquery' => wfArrayToCgi( array_diff_key( $request->getQueryValues(),
@@ -456,7 +456,7 @@ class SpecialPage implements MessageLocalizer {
 		$searchEngine->setLimitOffset( $limit, $offset );
 		$searchEngine->setNamespaces( [] );
 		$result = $searchEngine->defaultPrefixSearch( $search );
-		return array_map( function ( Title $t ) {
+		return array_map( function( Title $t ) {
 			return $t->getPrefixedText();
 		}, $result );
 	}
@@ -743,7 +743,7 @@ class SpecialPage implements MessageLocalizer {
 	 * @return Message
 	 * @see wfMessage
 	 */
-	public function msg( $key /* $args */ ) {
+	public function msg( /* $args */ ) {
 		$message = call_user_func_array(
 			[ $this->getContext(), 'msg' ],
 			func_get_args()
@@ -783,10 +783,6 @@ class SpecialPage implements MessageLocalizer {
 	 * @since 1.25
 	 */
 	public function addHelpLink( $to, $overrideBaseUrl = false ) {
-		if ( $this->including() ) {
-			return;
-		}
-
 		global $wgContLang;
 		$msg = $this->msg( $wgContLang->lc( $this->getName() ) . '-helppage' );
 

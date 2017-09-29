@@ -355,7 +355,7 @@ abstract class File implements IDBAccessObject {
 		return $this->url;
 	}
 
-	/**
+	/*
 	 * Get short description URL for a files based on the page ID
 	 *
 	 * @return string|null
@@ -862,7 +862,7 @@ abstract class File implements IDBAccessObject {
 	 *
 	 * Overridden by LocalFile to actually query the DB
 	 *
-	 * @param int $flags Bitfield of File::READ_* constants
+	 * @param integer $flags Bitfield of File::READ_* constants
 	 */
 	public function load( $flags = 0 ) {
 	}
@@ -1147,7 +1147,7 @@ abstract class File implements IDBAccessObject {
 		if ( !$thumb ) { // bad params?
 			$thumb = false;
 		} elseif ( $thumb->isError() ) { // transform error
-			/** @var MediaTransformError $thumb */
+			/** @var $thumb MediaTransformError */
 			$this->lastError = $thumb->toText();
 			// Ignore errors if requested
 			if ( $wgIgnoreImageErrors && !( $flags & self::RENDER_NOW ) ) {
@@ -1282,10 +1282,11 @@ abstract class File implements IDBAccessObject {
 		// Thumbnailing a very large file could result in network saturation if
 		// everyone does it at once.
 		if ( $this->getSize() >= 1e7 ) { // 10MB
+			$that = $this;
 			$work = new PoolCounterWorkViaCallback( 'GetLocalFileCopy', sha1( $this->getName() ),
 				[
-					'doWork' => function () {
-						return $this->getLocalRefPath();
+					'doWork' => function () use ( $that ) {
+						return $that->getLocalRefPath();
 					}
 				]
 			);
@@ -2148,34 +2149,15 @@ abstract class File implements IDBAccessObject {
 	}
 
 	/**
-	 * @deprecated since 1.30, use File::getContentHeaders instead
+	 * @return array HTTP header name/value map to use for HEAD/GET request responses
 	 */
 	function getStreamHeaders() {
-		wfDeprecated( __METHOD__, '1.30' );
-		return $this->getContentHeaders();
-	}
-
-	/**
-	 * @return array HTTP header name/value map to use for HEAD/GET request responses
-	 * @since 1.30
-	 */
-	function getContentHeaders() {
 		$handler = $this->getHandler();
 		if ( $handler ) {
-			$metadata = $this->getMetadata();
-
-			if ( is_string( $metadata ) ) {
-				$metadata = MediaWiki\quietCall( 'unserialize', $metadata );
-			}
-
-			if ( !is_array( $metadata ) ) {
-				$metadata = [];
-			}
-
-			return $handler->getContentHeaders( $metadata );
+			return $handler->getStreamHeaders( $this->getMetadata() );
+		} else {
+			return [];
 		}
-
-		return [];
 	}
 
 	/**

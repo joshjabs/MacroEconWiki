@@ -55,7 +55,26 @@ $maintenance->setup();
 // to $maintenance->mSelf. Keep that here for b/c
 $self = $maintenance->getName();
 
-require_once "$IP/includes/PreConfigSetup.php";
+# Start the autoloader, so that extensions can derive classes from core files
+require_once "$IP/includes/AutoLoader.php";
+# Grab profiling functions
+require_once "$IP/includes/profiler/ProfilerFunctions.php";
+
+# Start the profiler
+$wgProfiler = [];
+if ( file_exists( "$IP/StartProfiler.php" ) ) {
+	require "$IP/StartProfiler.php";
+}
+
+// Some other requires
+require_once "$IP/includes/Defines.php";
+require_once "$IP/includes/DefaultSettings.php";
+require_once "$IP/includes/GlobalFunctions.php";
+
+# Load composer's autoloader if present
+if ( is_readable( "$IP/vendor/autoload.php" ) ) {
+	require_once "$IP/vendor/autoload.php";
+}
 
 if ( defined( 'MW_CONFIG_CALLBACK' ) ) {
 	# Use a callback function to configure MediaWiki
@@ -94,18 +113,14 @@ $maintenance->execute();
 // Potentially debug globals
 $maintenance->globals();
 
-if ( $maintenance->getDbType() !== Maintenance::DB_NONE ) {
-	// Perform deferred updates.
-	$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
-	$lbFactory->commitMasterChanges( $maintClass );
-	DeferredUpdates::doUpdates();
-}
+// Perform deferred updates.
+$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+$lbFactory->commitMasterChanges( $maintClass );
+DeferredUpdates::doUpdates();
 
 // log profiling info
 wfLogProfilingData();
 
-if ( isset( $lbFactory ) ) {
-	// Commit and close up!
-	$lbFactory->commitMasterChanges( 'doMaintenance' );
-	$lbFactory->shutdown( $lbFactory::SHUTDOWN_NO_CHRONPROT );
-}
+// Commit and close up!
+$lbFactory->commitMasterChanges( 'doMaintenance' );
+$lbFactory->shutdown( $lbFactory::SHUTDOWN_NO_CHRONPROT );

@@ -9,9 +9,9 @@ use EventRelayerGroup;
 use GenderCache;
 use GlobalVarConfig;
 use Hooks;
-use IBufferingStatsdDataFactory;
 use Wikimedia\Rdbms\LBFactory;
 use LinkCache;
+use Liuggio\StatsdClient\Factory\StatsdDataFactory;
 use Wikimedia\Rdbms\LoadBalancer;
 use MediaHandlerFactory;
 use MediaWiki\Linker\LinkRenderer;
@@ -23,7 +23,6 @@ use MWException;
 use MimeAnalyzer;
 use ObjectCache;
 use Parser;
-use ParserCache;
 use ProxyLookup;
 use SearchEngine;
 use SearchEngineConfig;
@@ -378,7 +377,7 @@ class MediaWikiServices extends ServiceContainer {
 		parent::__construct();
 
 		// Register the given Config object as the bootstrap config service.
-		$this->defineService( 'BootstrapConfig', function () use ( $config ) {
+		$this->defineService( 'BootstrapConfig', function() use ( $config ) {
 			return $config;
 		} );
 	}
@@ -447,7 +446,7 @@ class MediaWikiServices extends ServiceContainer {
 
 	/**
 	 * @since 1.27
-	 * @return IBufferingStatsdDataFactory
+	 * @return StatsdDataFactory
 	 */
 	public function getStatsdDataFactory() {
 		return $this->getService( 'StatsdDataFactory' );
@@ -572,14 +571,6 @@ class MediaWikiServices extends ServiceContainer {
 	 */
 	public function getParser() {
 		return $this->getService( 'Parser' );
-	}
-
-	/**
-	 * @since 1.30
-	 * @return ParserCache
-	 */
-	public function getParserCache() {
-		return $this->getService( 'ParserCache' );
 	}
 
 	/**

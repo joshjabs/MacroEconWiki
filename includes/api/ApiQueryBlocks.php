@@ -37,7 +37,6 @@ class ApiQueryBlocks extends ApiQueryBase {
 
 	public function execute() {
 		$db = $this->getDB();
-		$commentStore = new CommentStore( 'ipb_reason' );
 		$params = $this->extractRequestParams();
 		$this->requireMaxOneParameter( $params, 'users', 'ip' );
 
@@ -62,17 +61,11 @@ class ApiQueryBlocks extends ApiQueryBase {
 		$this->addFieldsIf( 'ipb_by_text', $fld_by );
 		$this->addFieldsIf( 'ipb_by', $fld_byid );
 		$this->addFieldsIf( 'ipb_expiry', $fld_expiry );
+		$this->addFieldsIf( 'ipb_reason', $fld_reason );
 		$this->addFieldsIf( [ 'ipb_range_start', 'ipb_range_end' ], $fld_range );
 		$this->addFieldsIf( [ 'ipb_anon_only', 'ipb_create_account', 'ipb_enable_autoblock',
 			'ipb_block_email', 'ipb_deleted', 'ipb_allow_usertalk' ],
 			$fld_flags );
-
-		if ( $fld_reason ) {
-			$commentQuery = $commentStore->getJoin();
-			$this->addTables( $commentQuery['tables'] );
-			$this->addFields( $commentQuery['fields'] );
-			$this->addJoinConds( $commentQuery['joins'] );
-		}
 
 		$this->addOption( 'LIMIT', $params['limit'] + 1 );
 		$this->addTimestampWhereRange(
@@ -212,7 +205,7 @@ class ApiQueryBlocks extends ApiQueryBase {
 				$block['expiry'] = ApiResult::formatExpiry( $row->ipb_expiry );
 			}
 			if ( $fld_reason ) {
-				$block['reason'] = $commentStore->getComment( $row )->text;
+				$block['reason'] = $row->ipb_reason;
 			}
 			if ( $fld_range && !$row->ipb_auto ) {
 				$block['rangestart'] = IP::formatHex( $row->ipb_range_start );

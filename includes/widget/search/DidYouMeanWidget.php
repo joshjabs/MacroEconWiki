@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Widget\Search;
 
-use HtmlArmor;
+use Linker;
 use SearchResultSet;
 use SpecialSearch;
 
@@ -53,20 +53,18 @@ class DidYouMeanWidget {
 		];
 		$stParams = array_merge( $params, $this->specialSearch->powerSearchOptions() );
 
-		$linkRenderer = $this->specialSearch->getLinkRenderer();
-		$snippet = $resultSet->getQueryAfterRewriteSnippet();
-		$rewritten = $linkRenderer->makeKnownLink(
+		$rewritten = Linker::linkKnown(
 			$this->specialSearch->getPageTitle(),
-			$snippet ? new HtmlArmor( $snippet ) : null,
+			$resultSet->getQueryAfterRewriteSnippet() ?: null,
 			[ 'id' => 'mw-search-DYM-rewritten' ],
 			$stParams
 		);
 
 		$stParams['search'] = $term;
 		$stParams['runsuggestion'] = 0;
-		$original = $linkRenderer->makeKnownLink(
+		$original = Linker::linkKnown(
 			$this->specialSearch->getPageTitle(),
-			$term,
+			htmlspecialchars( $term, ENT_QUOTES, 'UTF-8' ),
 			[ 'id' => 'mwsearch-DYM-original' ],
 			$stParams
 		);
@@ -91,10 +89,9 @@ class DidYouMeanWidget {
 		];
 		$stParams = array_merge( $params, $this->specialSearch->powerSearchOptions() );
 
-		$snippet = $resultSet->getSuggestionSnippet();
-		$suggest = $this->specialSearch->getLinkRenderer()->makeKnownLink(
+		$suggest = Linker::linkKnown(
 			$this->specialSearch->getPageTitle(),
-			$snippet ? new HtmlArmor( $snippet ) : null,
+			$resultSet->getSuggestionSnippet() ?: null,
 			[ 'id' => 'mw-search-DYM-suggestion' ],
 			$stParams
 		);

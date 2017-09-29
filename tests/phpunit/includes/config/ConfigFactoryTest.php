@@ -47,7 +47,7 @@ class ConfigFactoryTest extends MediaWikiTestCase {
 	}
 
 	/**
-	 * @covers ConfigFactory::salvage
+	 * @covers ConfigFactory::register
 	 */
 	public function testSalvage() {
 		$oldFactory = new ConfigFactory();
@@ -63,7 +63,7 @@ class ConfigFactoryTest extends MediaWikiTestCase {
 		// define new config instance
 		$newFactory = new ConfigFactory();
 		$newFactory->register( 'foo', 'GlobalVarConfig::newInstance' );
-		$newFactory->register( 'bar', function () {
+		$newFactory->register( 'bar', function() {
 			return new HashConfig();
 		} );
 
@@ -83,7 +83,7 @@ class ConfigFactoryTest extends MediaWikiTestCase {
 	}
 
 	/**
-	 * @covers ConfigFactory::getConfigNames
+	 * @covers ConfigFactory::register
 	 */
 	public function testGetConfigNames() {
 		$factory = new ConfigFactory();
@@ -96,23 +96,13 @@ class ConfigFactoryTest extends MediaWikiTestCase {
 	/**
 	 * @covers ConfigFactory::makeConfig
 	 */
-	public function testMakeConfigWithCallback() {
+	public function testMakeConfig() {
 		$factory = new ConfigFactory();
 		$factory->register( 'unittest', 'GlobalVarConfig::newInstance' );
 
 		$conf = $factory->makeConfig( 'unittest' );
 		$this->assertInstanceOf( 'Config', $conf );
 		$this->assertSame( $conf, $factory->makeConfig( 'unittest' ) );
-	}
-
-	/**
-	 * @covers ConfigFactory::makeConfig
-	 */
-	public function testMakeConfigWithObject() {
-		$factory = new ConfigFactory();
-		$conf = new HashConfig();
-		$factory->register( 'test', $conf );
-		$this->assertSame( $conf, $factory->makeConfig( 'test' ) );
 	}
 
 	/**

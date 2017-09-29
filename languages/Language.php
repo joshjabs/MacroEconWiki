@@ -203,16 +203,15 @@ class Language {
 	/**
 	 * Create a language object for a given language code
 	 * @param string $code
-	 * @param bool $fallback Whether we're going through language fallback chain
 	 * @throws MWException
 	 * @return Language
 	 */
-	protected static function newFromCode( $code, $fallback = false ) {
-		if ( !self::isValidCode( $code ) ) {
+	protected static function newFromCode( $code ) {
+		if ( !Language::isValidCode( $code ) ) {
 			throw new MWException( "Invalid language code \"$code\"" );
 		}
 
-		if ( !self::isValidBuiltInCode( $code ) ) {
+		if ( !Language::isValidBuiltInCode( $code ) ) {
 			// It's not possible to customise this code with class files, so
 			// just return a Language object. This is to support uselang= hacks.
 			$lang = new Language;
@@ -221,16 +220,16 @@ class Language {
 		}
 
 		// Check if there is a language class for the code
-		$class = self::classFromCode( $code, $fallback );
+		$class = self::classFromCode( $code );
 		if ( class_exists( $class ) ) {
 			$lang = new $class;
 			return $lang;
 		}
 
 		// Keep trying the fallback list until we find an existing class
-		$fallbacks = self::getFallbacksFor( $code );
+		$fallbacks = Language::getFallbacksFor( $code );
 		foreach ( $fallbacks as $fallbackCode ) {
-			if ( !self::isValidBuiltInCode( $fallbackCode ) ) {
+			if ( !Language::isValidBuiltInCode( $fallbackCode ) ) {
 				throw new MWException( "Invalid fallback '$fallbackCode' in fallback sequence for '$code'" );
 			}
 
@@ -361,6 +360,7 @@ class Language {
 	 * @return bool
 	 */
 	public static function isValidBuiltInCode( $code ) {
+
 		if ( !is_string( $code ) ) {
 			if ( is_object( $code ) ) {
 				$addmsg = " of class " . get_class( $code );
@@ -725,7 +725,7 @@ class Language {
 	}
 
 	/**
-	 * @return string[]|bool List of date format preference keys, or false if disabled.
+	 * @return array
 	 */
 	public function getDatePreferences() {
 		return self::$dataCache->getItem( $this->mCode, 'datePreferences' );
@@ -826,10 +826,10 @@ class Language {
 	 * @return array Language code => language name
 	 */
 	private static function fetchLanguageNamesUncached( $inLanguage = null, $include = 'mw' ) {
-		global $wgExtraLanguageNames, $wgUsePigLatinVariant;
+		global $wgExtraLanguageNames;
 
 		// If passed an invalid language code to use, fallback to en
-		if ( $inLanguage !== null && !self::isValidCode( $inLanguage ) ) {
+		if ( $inLanguage !== null && !Language::isValidCode( $inLanguage ) ) {
 			$inLanguage = 'en';
 		}
 
@@ -841,11 +841,6 @@ class Language {
 		}
 
 		$mwNames = $wgExtraLanguageNames + MediaWiki\Languages\Data\Names::$names;
-		if ( $wgUsePigLatinVariant ) {
-			// Pig Latin (for variant development)
-			$mwNames['en-x-piglatin'] = 'Igpay Atinlay';
-		}
-
 		foreach ( $mwNames as $mwCode => $mwName ) {
 			# - Prefer own MediaWiki native name when not using the hook
 			# - For other names just add if not added through the hook
@@ -1092,7 +1087,7 @@ class Language {
 	 *      YYYYMMDDHHMMSS
 	 *      01234567890123
 	 * @param DateTimeZone $zone Timezone of $ts
-	 * @param int &$ttl The amount of time (in seconds) the output may be cached for.
+	 * @param[out] int $ttl The amount of time (in seconds) the output may be cached for.
 	 * Only makes sense if $ts is the current time.
 	 * @todo handling of "o" format character for Iranian, Hebrew, Hijri & Thai?
 	 *
@@ -1192,7 +1187,7 @@ class Language {
 				case 'D':
 					$usedDay = true;
 					$s .= $this->getWeekdayAbbreviation(
-						self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'w' ) + 1
+						Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'w' ) + 1
 					);
 					break;
 				case 'j':
@@ -1223,7 +1218,7 @@ class Language {
 				case 'l':
 					$usedDay = true;
 					$s .= $this->getWeekdayName(
-						self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'w' ) + 1
+						Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'w' ) + 1
 					);
 					break;
 				case 'F':
@@ -1404,36 +1399,36 @@ class Language {
 				case 'O':
 				case 'P':
 				case 'T':
-					$s .= self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$s .= Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case 'w':
 				case 'N':
 				case 'z':
 					$usedDay = true;
-					$num = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$num = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case 'W':
 					$usedWeek = true;
-					$num = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$num = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case 't':
 					$usedMonth = true;
-					$num = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$num = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case 'L':
 					$usedIsLeapYear = true;
-					$num = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$num = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case 'o':
 					$usedISOYear = true;
-					$num = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$num = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case 'U':
 					$usedSecond = true;
 					// fall through
 				case 'I':
 				case 'Z':
-					$num = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
+					$num = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, $code );
 					break;
 				case '\\':
 					# Backslash escaping
@@ -1467,7 +1462,7 @@ class Language {
 					$s .= $num;
 					$raw = false;
 				} elseif ( $roman ) {
-					$s .= self::romanNumeral( $num );
+					$s .= Language::romanNumeral( $num );
 					$roman = false;
 				} elseif ( $hebrewNum ) {
 					$s .= self::hebrewNumeral( $num );
@@ -1509,7 +1504,7 @@ class Language {
 				substr( $ts, 10, 2 ) * 60 - substr( $ts, 12, 2 );
 			if ( $usedWeek ) {
 				$possibleTtls[] =
-					( 7 - self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'N' ) ) * 86400 +
+					( 7 - Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'N' ) ) * 86400 +
 					$timeRemainingInDay;
 			} elseif ( $usedISOYear ) {
 				// December 28th falls on the last ISO week of the year, every year.
@@ -1519,29 +1514,29 @@ class Language {
 					substr( $ts, 0, 4 ) . '1228',
 					$zone ?: new DateTimeZone( 'UTC' )
 				)->format( 'W' );
-				$currentISOWeek = self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'W' );
+				$currentISOWeek = Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'W' );
 				$weeksRemaining = $lastWeekOfISOYear - $currentISOWeek;
 				$timeRemainingInWeek =
-					( 7 - self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'N' ) ) * 86400
+					( 7 - Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'N' ) ) * 86400
 					+ $timeRemainingInDay;
 				$possibleTtls[] = $weeksRemaining * 604800 + $timeRemainingInWeek;
 			}
 
 			if ( $usedMonth ) {
 				$possibleTtls[] =
-					( self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 't' ) -
+					( Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 't' ) -
 						substr( $ts, 6, 2 ) ) * 86400
 					+ $timeRemainingInDay;
 			} elseif ( $usedYear ) {
 				$possibleTtls[] =
-					( self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'L' ) + 364 -
-						self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'z' ) ) * 86400
+					( Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'L' ) + 364 -
+						Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'z' ) ) * 86400
 					+ $timeRemainingInDay;
 			} elseif ( $usedIsLeapYear ) {
 				$year = substr( $ts, 0, 4 );
 				$timeRemainingInYear =
-					( self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'L' ) + 364 -
-						self::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'z' ) ) * 86400
+					( Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'L' ) + 364 -
+						Language::dateTimeObjFormat( $dateTimeObj, $ts, $zone, 'z' ) ) * 86400
 					+ $timeRemainingInDay;
 				$mod = $year % 4;
 				if ( $mod || ( !( $year % 100 ) && $year % 400 ) ) {
@@ -1584,9 +1579,9 @@ class Language {
 	 * @return int[]
 	 */
 	private static function tsToIranian( $ts ) {
-		$gy = substr( $ts, 0, 4 ) - 1600;
-		$gm = substr( $ts, 4, 2 ) - 1;
-		$gd = substr( $ts, 6, 2 ) - 1;
+		$gy = substr( $ts, 0, 4 ) -1600;
+		$gm = substr( $ts, 4, 2 ) -1;
+		$gd = substr( $ts, 6, 2 ) -1;
 
 		# Days passed from the beginning (including leap years)
 		$gDayNo = 365 * $gy
@@ -1666,7 +1661,7 @@ class Language {
 								(int)( ( 275 * $zm ) / 9 ) + $zd + 1729777;
 		}
 
-		$zl = $zjd - 1948440 + 10632;
+		$zl = $zjd -1948440 + 10632;
 		$zn = (int)( ( $zl - 1 ) / 10631 );
 		$zl = $zl - 10631 * $zn + 354;
 		$zj = ( (int)( ( 10985 - $zl ) / 5316 ) ) * ( (int)( ( 50 * $zl ) / 17719 ) ) +
@@ -3346,7 +3341,7 @@ class Language {
 				if ( $start < 0 ) {
 					$start = 0;
 				}
-				$groupedNumber = substr( $number, $start, $end - $start ) . $groupedNumber;
+				$groupedNumber = substr( $number, $start, $end -$start ) . $groupedNumber;
 				$end = $start;
 				if ( $numMatches > 1 ) {
 					// use the last pattern for the rest of the number
@@ -3956,7 +3951,7 @@ class Language {
 	 * @return string Text, wrapped in LRE...PDF or RLE...PDF or nothing
 	 */
 	public function embedBidi( $text = '' ) {
-		$dir = self::strongDirFromContent( $text );
+		$dir = Language::strongDirFromContent( $text );
 		if ( $dir === 'ltr' ) {
 			// Wrap in LEFT-TO-RIGHT EMBEDDING ... POP DIRECTIONAL FORMATTING
 			return self::$lre . $text . self::$pdf;
@@ -4264,7 +4259,7 @@ class Language {
 			$this->mParentLanguage = null;
 			return null;
 		}
-		$lang = self::factory( $code );
+		$lang = Language::factory( $code );
 		if ( !$lang->hasVariant( $this->getCode() ) ) {
 			$this->mParentLanguage = null;
 			return null;
@@ -4279,7 +4274,7 @@ class Language {
 	 *
 	 * @since 1.28
 	 * @param Language $lang
-	 * @return bool
+	 * @return boolean
 	 */
 	public function equals( Language $lang ) {
 		return $lang->getCode() === $this->mCode;
@@ -4343,11 +4338,10 @@ class Language {
 
 	/**
 	 * @param string $code
-	 * @param bool $fallback Whether we're going through language fallback chain
 	 * @return string Name of the language class
 	 */
-	public static function classFromCode( $code, $fallback = true ) {
-		if ( $fallback && $code == 'en' ) {
+	public static function classFromCode( $code ) {
+		if ( $code == 'en' ) {
 			return 'Language';
 		} else {
 			return 'Language' . str_replace( '-', '_', ucfirst( $code ) );
@@ -4420,7 +4414,7 @@ class Language {
 	 * @return array Non-empty array, ending in "en"
 	 */
 	public static function getFallbacksFor( $code ) {
-		if ( $code === 'en' || !self::isValidBuiltInCode( $code ) ) {
+		if ( $code === 'en' || !Language::isValidBuiltInCode( $code ) ) {
 			return [];
 		}
 		// For unknown languages, fallbackSequence returns an empty array,
@@ -4537,7 +4531,7 @@ class Language {
 	public function formatExpiry( $expiry, $format = true, $infinity = 'infinity' ) {
 		static $dbInfinity;
 		if ( $dbInfinity === null ) {
-			$dbInfinity = wfGetDB( DB_REPLICA )->getInfinity();
+			$dbInfinity = wfGetDB( DB_SLAVE )->getInfinity();
 		}
 
 		if ( $expiry == '' || $expiry === 'infinity' || $expiry == $dbInfinity ) {
@@ -4821,7 +4815,7 @@ class Language {
 	 */
 	public function getCompiledPluralRules() {
 		$pluralRules = self::$dataCache->getItem( strtolower( $this->mCode ), 'compiledPluralRules' );
-		$fallbacks = self::getFallbacksFor( $this->mCode );
+		$fallbacks = Language::getFallbacksFor( $this->mCode );
 		if ( !$pluralRules ) {
 			foreach ( $fallbacks as $fallbackCode ) {
 				$pluralRules = self::$dataCache->getItem( strtolower( $fallbackCode ), 'compiledPluralRules' );
@@ -4840,7 +4834,7 @@ class Language {
 	 */
 	public function getPluralRules() {
 		$pluralRules = self::$dataCache->getItem( strtolower( $this->mCode ), 'pluralRules' );
-		$fallbacks = self::getFallbacksFor( $this->mCode );
+		$fallbacks = Language::getFallbacksFor( $this->mCode );
 		if ( !$pluralRules ) {
 			foreach ( $fallbacks as $fallbackCode ) {
 				$pluralRules = self::$dataCache->getItem( strtolower( $fallbackCode ), 'pluralRules' );
@@ -4859,7 +4853,7 @@ class Language {
 	 */
 	public function getPluralRuleTypes() {
 		$pluralRuleTypes = self::$dataCache->getItem( strtolower( $this->mCode ), 'pluralRuleTypes' );
-		$fallbacks = self::getFallbacksFor( $this->mCode );
+		$fallbacks = Language::getFallbacksFor( $this->mCode );
 		if ( !$pluralRuleTypes ) {
 			foreach ( $fallbacks as $fallbackCode ) {
 				$pluralRuleTypes = self::$dataCache->getItem( strtolower( $fallbackCode ), 'pluralRuleTypes' );

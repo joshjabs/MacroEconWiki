@@ -36,7 +36,7 @@ class UpdateRestrictions extends Maintenance {
 	public function __construct() {
 		parent::__construct();
 		$this->addDescription( 'Updates page_restrictions table from old page_restriction column' );
-		$this->setBatchSize( 1000 );
+		$this->setBatchSize( 100 );
 	}
 
 	public function execute() {
@@ -57,7 +57,7 @@ class UpdateRestrictions extends Maintenance {
 		$blockEnd = $start + $this->mBatchSize - 1;
 		$encodedExpiry = 'infinity';
 		while ( $blockEnd <= $end ) {
-			$this->output( "...doing page_id from $blockStart to $blockEnd out of $end\n" );
+			$this->output( "...doing page_id from $blockStart to $blockEnd\n" );
 			$cond = "page_id BETWEEN $blockStart AND $blockEnd AND page_restrictions !=''";
 			$res = $db->select(
 				'page',

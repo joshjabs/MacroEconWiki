@@ -236,7 +236,6 @@ class ApiMain extends ApiBase {
 				wfDebug( "API: stripping user credentials when the same-origin policy is not applied\n" );
 				$wgUser = new User();
 				$this->getContext()->setUser( $wgUser );
-				$request->response()->header( 'MediaWiki-Login-Suppressed: true' );
 			}
 		}
 
@@ -370,7 +369,7 @@ class ApiMain extends ApiBase {
 
 	/**
 	 * Set the continuation manager
-	 * @param ApiContinuationManager|null $manager
+	 * @param ApiContinuationManager|null
 	 */
 	public function setContinuationManager( $manager ) {
 		if ( $manager !== null ) {
@@ -693,17 +692,13 @@ class ApiMain extends ApiBase {
 		$request = $this->getRequest();
 		$response = $request->response();
 
-		$matchedOrigin = false;
+		$matchOrigin = false;
 		$allowTiming = false;
 		$varyOrigin = true;
 
 		if ( $originParam === '*' ) {
 			// Request for anonymous CORS
-			// Technically we should check for the presence of an Origin header
-			// and not process it as CORS if it's not set, but that would
-			// require us to vary on Origin for all 'origin=*' requests which
-			// we don't want to do.
-			$matchedOrigin = true;
+			$matchOrigin = true;
 			$allowOrigin = '*';
 			$allowCredentials = 'false';
 			$varyOrigin = false; // No need to vary
@@ -730,7 +725,7 @@ class ApiMain extends ApiBase {
 			}
 
 			$config = $this->getConfig();
-			$matchedOrigin = count( $origins ) === 1 && self::matchOrigin(
+			$matchOrigin = count( $origins ) === 1 && self::matchOrigin(
 				$originParam,
 				$config->get( 'CrossSiteAJAXdomains' ),
 				$config->get( 'CrossSiteAJAXdomainExceptions' )
@@ -741,21 +736,19 @@ class ApiMain extends ApiBase {
 			$allowTiming = $originHeader;
 		}
 
-		if ( $matchedOrigin ) {
+		if ( $matchOrigin ) {
 			$requestedMethod = $request->getHeader( 'Access-Control-Request-Method' );
 			$preflight = $request->getMethod() === 'OPTIONS' && $requestedMethod !== false;
 			if ( $preflight ) {
 				// This is a CORS preflight request
 				if ( $requestedMethod !== 'POST' && $requestedMethod !== 'GET' ) {
 					// If method is not a case-sensitive match, do not set any additional headers and terminate.
-					$response->header( 'MediaWiki-CORS-Rejection: Unsupported method requested in preflight' );
 					return true;
 				}
 				// We allow the actual request to send the following headers
 				$requestedHeaders = $request->getHeader( 'Access-Control-Request-Headers' );
 				if ( $requestedHeaders !== false ) {
 					if ( !self::matchRequestedHeaders( $requestedHeaders ) ) {
-						$response->header( 'MediaWiki-CORS-Rejection: Unsupported header requested in preflight' );
 						return true;
 					}
 					$response->header( 'Access-Control-Allow-Headers: ' . $requestedHeaders );
@@ -763,12 +756,6 @@ class ApiMain extends ApiBase {
 
 				// We only allow the actual request to be GET or POST
 				$response->header( 'Access-Control-Allow-Methods: POST, GET' );
-			} elseif ( $request->getMethod() !== 'POST' && $request->getMethod() !== 'GET' ) {
-				// Unsupported non-preflight method, don't handle it as CORS
-				$response->header(
-					'MediaWiki-CORS-Rejection: Unsupported method for simple request or actual request'
-				);
-				return true;
 			}
 
 			$response->header( "Access-Control-Allow-Origin: $allowOrigin" );
@@ -780,12 +767,9 @@ class ApiMain extends ApiBase {
 
 			if ( !$preflight ) {
 				$response->header(
-					'Access-Control-Expose-Headers: MediaWiki-API-Error, Retry-After, X-Database-Lag, '
-					. 'MediaWiki-Login-Suppressed'
+					'Access-Control-Expose-Headers: MediaWiki-API-Error, Retry-After, X-Database-Lag'
 				);
 			}
-		} else {
-			$response->header( 'MediaWiki-CORS-Rejection: Origin mismatch' );
 		}
 
 		if ( $varyOrigin ) {
@@ -1041,7 +1025,7 @@ class ApiMain extends ApiBase {
 			// None of the rest have any messages for non-error types
 		} elseif ( $e instanceof UsageException ) {
 			// User entered incorrect parameters - generate error response
-			$data = MediaWiki\quietCall( [ $e, 'getMessageArray' ] );
+			$data = $e->getMessageArray();
 			$code = $data['code'];
 			$info = $data['info'];
 			unset( $data['code'], $data['info'] );
@@ -1054,14 +1038,13 @@ class ApiMain extends ApiBase {
 			if ( ( $e instanceof DBQueryError ) && !$config->get( 'ShowSQLErrors' ) ) {
 				$params = [ 'apierror-databaseerror', WebRequest::getRequestId() ];
 			} else {
-				if ( $e instanceof ILocalizedException ) {
-					$msg = $e->getMessageObject();
-				} elseif ( $e instanceof MessageSpecifier ) {
-					$msg = Message::newFromSpecifier( $e );
-				} else {
-					$msg = wfEscapeWikiText( $e->getMessage() );
-				}
-				$params = [ 'apierror-exceptioncaught', WebRequest::getRequestId(), $msg ];
+				$params = [
+					'apierror-exceptioncaught',
+					WebRequest::getRequestId(),
+					$e instanceof ILocalizedException
+						? $e->getMessageObject()
+						: wfEscapeWikiText( $e->getMessage() )
+				];
 			}
 			$messages[] = ApiMessage::create( $params, $code );
 		}
@@ -1830,7 +1813,7 @@ class ApiMain extends ApiBase {
 				ApiBase::PARAM_TYPE => 'submodule',
 			],
 			'format' => [
-				ApiBase::PARAM_DFLT => self::API_DEFAULT_FORMAT,
+				ApiBase::PARAM_DFLT => ApiMain::API_DEFAULT_FORMAT,
 				ApiBase::PARAM_TYPE => 'submodule',
 			],
 			'maxlag' => [
@@ -1871,7 +1854,7 @@ class ApiMain extends ApiBase {
 		];
 	}
 
-	/** @inheritDoc */
+	/** @see ApiBase::getExamplesMessages() */
 	protected function getExamplesMessages() {
 		return [
 			'action=help'
@@ -1932,20 +1915,15 @@ class ApiMain extends ApiBase {
 
 			$header = $this->msg( 'api-help-datatypes-header' )->parse();
 
-			$id = Sanitizer::escapeIdForAttribute( 'main/datatypes', Sanitizer::ID_PRIMARY );
-			$idFallback = Sanitizer::escapeIdForAttribute( 'main/datatypes', Sanitizer::ID_FALLBACK );
-			$headline = Linker::makeHeadline( min( 6, $level ),
-				' class="apihelp-header"',
-				$id,
-				$header,
-				'',
-				$idFallback
-			);
-			// Ensure we have a sane anchor
-			if ( $id !== 'main/datatypes' && $idFallback !== 'main/datatypes' ) {
-				$headline = '<div id="main/datatypes"></div>' . $headline;
+			// Add an additional span with sanitized ID
+			if ( !$this->getConfig()->get( 'ExperimentalHtmlIds' ) ) {
+				$header = Html::element( 'span', [ 'id' => Sanitizer::escapeId( 'main/datatypes' ) ] ) .
+					$header;
 			}
-			$help['datatypes'] .= $headline;
+			$help['datatypes'] .= Html::rawElement( 'h' . min( 6, $level ),
+				[ 'id' => 'main/datatypes', 'class' => 'apihelp-header' ],
+				$header
+			);
 			$help['datatypes'] .= $this->msg( 'api-help-datatypes' )->parseAsBlock();
 			if ( !isset( $tocData['main/datatypes'] ) ) {
 				$tocnumber[$level]++;
@@ -1959,21 +1937,16 @@ class ApiMain extends ApiBase {
 				];
 			}
 
-			$header = $this->msg( 'api-credits-header' )->parse();
-			$id = Sanitizer::escapeIdForAttribute( 'main/credits', Sanitizer::ID_PRIMARY );
-			$idFallback = Sanitizer::escapeIdForAttribute( 'main/credits', Sanitizer::ID_FALLBACK );
-			$headline = Linker::makeHeadline( min( 6, $level ),
-				' class="apihelp-header"',
-				$id,
-				$header,
-				'',
-				$idFallback
-			);
-			// Ensure we have a sane anchor
-			if ( $id !== 'main/credits' && $idFallback !== 'main/credits' ) {
-				$headline = '<div id="main/credits"></div>' . $headline;
+			// Add an additional span with sanitized ID
+			if ( !$this->getConfig()->get( 'ExperimentalHtmlIds' ) ) {
+				$header = Html::element( 'span', [ 'id' => Sanitizer::escapeId( 'main/credits' ) ] ) .
+					$header;
 			}
-			$help['credits'] .= $headline;
+			$header = $this->msg( 'api-credits-header' )->parse();
+			$help['credits'] .= Html::rawElement( 'h' . min( 6, $level ),
+				[ 'id' => 'main/credits', 'class' => 'apihelp-header' ],
+				$header
+			);
 			$help['credits'] .= $this->msg( 'api-credits' )->useDatabase( false )->parseAsBlock();
 			if ( !isset( $tocData['main/credits'] ) ) {
 				$tocnumber[$level]++;

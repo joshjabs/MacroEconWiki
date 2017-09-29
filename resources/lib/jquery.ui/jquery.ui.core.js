@@ -157,7 +157,7 @@ function visible( element ) {
 		}).length;
 }
 
-$.extend( $.expr.pseudos, {
+$.extend( $.expr[ ":" ], {
 	data: $.expr.createPseudo ?
 		$.expr.createPseudo(function( dataName ) {
 			return function( elem ) {

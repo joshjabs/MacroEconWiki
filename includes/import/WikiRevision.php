@@ -607,12 +607,11 @@ class WikiRevision {
 			$pageId = $page->getId();
 			$created = false;
 
-			// Note: sha1 has been in XML dumps since 2012. If you have an
-			// older dump, the duplicate detection here won't work.
 			$prior = $dbw->selectField( 'revision', '1',
 				[ 'rev_page' => $pageId,
 					'rev_timestamp' => $dbw->timestamp( $this->timestamp ),
-					'rev_sha1' => $this->sha1base36 ],
+					'rev_user_text' => $userText,
+					'rev_comment' => $this->getComment() ],
 				__METHOD__
 			);
 			if ( $prior ) {
@@ -709,6 +708,7 @@ class WikiRevision {
 				'log_timestamp' => $dbw->timestamp( $this->timestamp ),
 				'log_namespace' => $this->getTitle()->getNamespace(),
 				'log_title' => $this->getTitle()->getDBkey(),
+				'log_comment' => $this->getComment(),
 				# 'log_user_text' => $this->user_text,
 				'log_params' => $this->params ],
 			__METHOD__
@@ -720,7 +720,9 @@ class WikiRevision {
 				. $this->timestamp . "\n" );
 			return false;
 		}
+		$log_id = $dbw->nextSequenceValue( 'logging_log_id_seq' );
 		$data = [
+			'log_id' => $log_id,
 			'log_type' => $this->type,
 			'log_action' => $this->action,
 			'log_timestamp' => $dbw->timestamp( $this->timestamp ),
@@ -728,8 +730,9 @@ class WikiRevision {
 			'log_user_text' => $userText,
 			'log_namespace' => $this->getTitle()->getNamespace(),
 			'log_title' => $this->getTitle()->getDBkey(),
+			'log_comment' => $this->getComment(),
 			'log_params' => $this->params
-		] + CommentStore::newKey( 'log_comment' )->insert( $dbw, $this->getComment() );
+		];
 		$dbw->insert( 'logging', $data, __METHOD__ );
 
 		return true;

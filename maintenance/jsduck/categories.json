@@ -66,8 +66,7 @@
 					"mw.Upload*",
 					"mw.ForeignUpload",
 					"mw.ForeignStructuredUpload*",
-					"mw.GallerySlideshow",
-					"mw.rcfilters*"
+					"mw.GallerySlideshow"
 				]
 			},
 			{

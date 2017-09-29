@@ -33,6 +33,9 @@ class SpecialAllMessages extends SpecialPage {
 	 */
 	protected $table;
 
+	/**
+	 * Constructor
+	 */
 	public function __construct() {
 		parent::__construct( 'Allmessages' );
 	}

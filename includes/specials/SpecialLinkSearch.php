@@ -266,7 +266,6 @@ class LinkSearchPage extends QueryPage {
 	 *
 	 * @see T130058
 	 * @todo FIXME This special page should not use LIMIT for paging
-	 * @return int
 	 */
 	protected function getMaxResults() {
 		return max( parent::getMaxResults(), 60000 );

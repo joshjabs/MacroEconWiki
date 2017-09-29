@@ -236,10 +236,12 @@
 			classes: [ 'mw-feedbackDialog-welcome-message' ]
 		} );
 		this.feedbackSubjectInput = new OO.ui.TextInputWidget( {
-			indicator: 'required'
+			indicator: 'required',
+			multiline: false
 		} );
-		this.feedbackMessageInput = new OO.ui.MultilineTextInputWidget( {
-			autosize: true
+		this.feedbackMessageInput = new OO.ui.TextInputWidget( {
+			autosize: true,
+			multiline: true
 		} );
 		feedbackSubjectFieldLayout = new OO.ui.FieldLayout( this.feedbackSubjectInput, {
 			label: mw.msg( 'feedback-subject' )
@@ -285,12 +287,12 @@
 	 */
 	mw.Feedback.Dialog.prototype.validateFeedbackForm = function () {
 		var isValid = (
-			(
-				!this.useragentMandatory ||
-				this.useragentCheckbox.isSelected()
-			) &&
-			this.feedbackSubjectInput.getValue()
-		);
+				(
+					!this.useragentMandatory ||
+					this.useragentCheckbox.isSelected()
+				) &&
+				this.feedbackSubjectInput.getValue()
+			);
 
 		this.actions.setAbilities( { submit: isValid } );
 	};

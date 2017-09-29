@@ -274,13 +274,14 @@ class LocalRepo extends FileRepo {
 			);
 		};
 
+		$that = $this;
 		$applyMatchingFiles = function ( ResultWrapper $res, &$searchSet, &$finalFiles )
-			use ( $fileMatchesSearch, $flags )
+			use ( $that, $fileMatchesSearch, $flags )
 		{
 			global $wgContLang;
-			$info = $this->getInfo();
+			$info = $that->getInfo();
 			foreach ( $res as $row ) {
-				$file = $this->newFileFromRow( $row );
+				$file = $that->newFileFromRow( $row );
 				// There must have been a search for this DB key, but this has to handle the
 				// cases were title capitalization is different on the client and repo wikis.
 				$dbKeysLook = [ strtr( $file->getName(), ' ', '_' ) ];
@@ -482,7 +483,7 @@ class LocalRepo extends FileRepo {
 	 * @return Closure
 	 */
 	protected function getDBFactory() {
-		return function ( $index ) {
+		return function( $index ) {
 			return wfGetDB( $index );
 		};
 	}

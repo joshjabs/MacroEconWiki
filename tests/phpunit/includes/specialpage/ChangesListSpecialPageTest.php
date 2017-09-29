@@ -15,30 +15,30 @@ use Wikimedia\TestingAccessWrapper;
  * @covers ChangesListSpecialPage
  */
 class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase {
+	protected function setUp() {
+		parent::setUp();
+
+		# setup the rc object
+		$this->changesListSpecialPage = $this->getPage();
+	}
+
 	protected function getPage() {
-		$mock = $this->getMockBuilder( ChangesListSpecialPage::class )
-			->setConstructorArgs(
+		return TestingAccessWrapper::newFromObject(
+			$this->getMockForAbstractClass(
+				'ChangesListSpecialPage',
 				[
 					'ChangesListSpecialPage',
 					''
 				]
 			)
-			->setMethods( [ 'getPageTitle' ] )
-			->getMockForAbstractClass();
-
-		$mock->method( 'getPageTitle' )->willReturn(
-			Title::makeTitle( NS_SPECIAL, 'ChangesListSpecialPage' )
 		);
-
-		$mock = TestingAccessWrapper::newFromObject(
-			$mock
-		);
-
-		return $mock;
 	}
 
-	private function buildQuery(
+	/** helper to test SpecialRecentchanges::buildMainQueryConds() */
+	private function assertConditions(
+		$expected,
 		$requestOptions = null,
+		$message = '',
 		$user = null
 	) {
 		$context = new RequestContext;
@@ -48,7 +48,6 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 		}
 
 		$this->changesListSpecialPage->setContext( $context );
-		$this->changesListSpecialPage->filterGroups = [];
 		$formOptions = $this->changesListSpecialPage->setup( null );
 
 		#  Filter out rc_timestamp conditions which depends on the test runtime
@@ -77,18 +76,6 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 			$queryConditions,
 			'ChangesListSpecialPageTest::filterOutRcTimestampCondition'
 		);
-
-		return $queryConditions;
-	}
-
-	/** helper to test SpecialRecentchanges::buildQuery() */
-	private function assertConditions(
-		$expected,
-		$requestOptions = null,
-		$message = '',
-		$user = null
-	) {
-		$queryConditions = $this->buildQuery( $requestOptions, $user );
 
 		$this->assertEquals(
 			self::normalizeCondition( $expected ),
@@ -122,7 +109,7 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 			[
 				'namespace' => NS_MAIN,
 			],
-			"rc conditions with one namespace"
+			"rc conditions with no options (aka default setting)"
 		);
 	}
 
@@ -139,56 +126,50 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 		);
 	}
 
-	public function testRcNsFilterMultiple() {
+	/**
+	 * T4429
+	 * @dataProvider provideNamespacesAssociations
+	 */
+	public function testRcNsFilterAssociation( $ns1, $ns2 ) {
 		$this->assertConditions(
 			[ # expected
-				"rc_namespace IN ('1','2','3')",
+				"(rc_namespace = '$ns1' OR rc_namespace = '$ns2')",
 			],
 			[
-				'namespace' => '1;2;3',
-			],
-			"rc conditions with multiple namespaces"
-		);
-	}
-
-	public function testRcNsFilterMultipleAssociated() {
-		$this->assertConditions(
-			[ # expected
-				"rc_namespace IN ('0','1','4','5','6','7')",
-			],
-			[
-				'namespace' => '1;4;7',
+				'namespace' => $ns1,
 				'associated' => 1,
 			],
-			"rc conditions with multiple namespaces and associated"
+			"rc conditions with namespace inverted"
 		);
 	}
 
-	public function testRcNsFilterMultipleAssociatedInvert() {
+	/**
+	 * T4429
+	 * @dataProvider provideNamespacesAssociations
+	 */
+	public function testRcNsFilterAssociationWithInversion( $ns1, $ns2 ) {
 		$this->assertConditions(
 			[ # expected
-				"rc_namespace NOT IN ('2','3','8','9')",
+				"(rc_namespace != '$ns1' AND rc_namespace != '$ns2')",
 			],
 			[
-				'namespace' => '2;3;9',
+				'namespace' => $ns1,
 				'associated' => 1,
-				'invert' => 1
-			],
-			"rc conditions with multiple namespaces, associated and inverted"
-		);
-	}
-
-	public function testRcNsFilterMultipleInvert() {
-		$this->assertConditions(
-			[ # expected
-				"rc_namespace NOT IN ('1','2','3')",
-			],
-			[
-				'namespace' => '1;2;3',
 				'invert' => 1,
 			],
-			"rc conditions with multiple namespaces inverted"
+			"rc conditions with namespace inverted"
 		);
+	}
+
+	/**
+	 * Provides associated namespaces to test recent changes
+	 * namespaces association filtering.
+	 */
+	public static function provideNamespacesAssociations() {
+		return [ # (NS => Associated_NS)
+			[ NS_MAIN, NS_TALK ],
+			[ NS_TALK, NS_MAIN ],
+		];
 	}
 
 	public function testRcHidemyselfFilter() {
@@ -243,6 +224,22 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 		);
 	}
 
+	public function testRcHidemyselfHidebyothersFilter() {
+		$user = $this->getTestUser()->getUser();
+		$this->assertConditions(
+			[ # expected
+				"rc_user_text != '{$user->getName()}'",
+				"rc_user_text = '{$user->getName()}'",
+			],
+			[
+				'hidemyself' => 1,
+				'hidebyothers' => 1,
+			],
+			"rc conditions: hidemyself=1 hidebyothers=1 (logged in)",
+			$user
+		);
+	}
+
 	public function testRcHidepageedits() {
 		$this->assertConditions(
 			[ # expected
@@ -293,7 +290,6 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 	}
 
 	public function testRcHidepatrolledDisabledFilter() {
-		$this->setMwGlobals( 'wgUseRCPatrol', false );
 		$user = $this->getTestUser()->getUser();
 		$this->assertConditions(
 			[ # expected
@@ -307,7 +303,6 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 	}
 
 	public function testRcHideunpatrolledDisabledFilter() {
-		$this->setMwGlobals( 'wgUseRCPatrol', false );
 		$user = $this->getTestUser()->getUser();
 		$this->assertConditions(
 			[ # expected
@@ -371,6 +366,22 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 		);
 	}
 
+	public function testRcHidepatrolledHideunpatrolledFilter() {
+		$user = $this->getTestSysop()->getUser();
+		$this->assertConditions(
+			[ # expected
+				"rc_patrolled = 0",
+				"rc_patrolled = 1",
+			],
+			[
+				'hidepatrolled' => 1,
+				'hideunpatrolled' => 1,
+			],
+			"rc conditions: hidepatrolled=1 hideunpatrolled=1",
+			$user
+		);
+	}
+
 	public function testHideCategorization() {
 		$this->assertConditions(
 			[
@@ -384,106 +395,7 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 		);
 	}
 
-	public function testFilterUserExpLevelAll() {
-		$this->assertConditions(
-			[
-				# expected
-			],
-			[
-				'userExpLevel' => 'registered;unregistered;newcomer;learner;experienced',
-			],
-			"rc conditions: userExpLevel=registered;unregistered;newcomer;learner;experienced"
-		);
-	}
-
-	public function testFilterUserExpLevelRegisteredUnregistered() {
-		$this->assertConditions(
-			[
-				# expected
-			],
-			[
-				'userExpLevel' => 'registered;unregistered',
-			],
-			"rc conditions: userExpLevel=registered;unregistered"
-		);
-	}
-
-	public function testFilterUserExpLevelRegisteredUnregisteredLearner() {
-		$this->assertConditions(
-			[
-				# expected
-			],
-			[
-				'userExpLevel' => 'registered;unregistered;learner',
-			],
-			"rc conditions: userExpLevel=registered;unregistered;learner"
-		);
-	}
-
-	public function testFilterUserExpLevelAllExperienceLevels() {
-		$this->assertConditions(
-			[
-				# expected
-				'rc_user != 0',
-			],
-			[
-				'userExpLevel' => 'newcomer;learner;experienced',
-			],
-			"rc conditions: userExpLevel=newcomer;learner;experienced"
-		);
-	}
-
-	public function testFilterUserExpLevelRegistrered() {
-		$this->assertConditions(
-			[
-				# expected
-				'rc_user != 0',
-			],
-			[
-				'userExpLevel' => 'registered',
-			],
-			"rc conditions: userExpLevel=registered"
-		);
-	}
-
-	public function testFilterUserExpLevelUnregistrered() {
-		$this->assertConditions(
-			[
-				# expected
-				'rc_user' => 0,
-			],
-			[
-				'userExpLevel' => 'unregistered',
-			],
-			"rc conditions: userExpLevel=unregistered"
-		);
-	}
-
-	public function testFilterUserExpLevelRegistreredOrLearner() {
-		$this->assertConditions(
-			[
-				# expected
-				'rc_user != 0',
-			],
-			[
-				'userExpLevel' => 'registered;learner',
-			],
-			"rc conditions: userExpLevel=registered;learner"
-		);
-	}
-
-	public function testFilterUserExpLevelUnregistreredOrExperienced() {
-		$conds = $this->buildQuery( [ 'userExpLevel' => 'unregistered;experienced' ] );
-
-		$this->assertRegExp(
-			'/\(rc_user = 0\) OR \(\(user_editcount >= 500\) AND \(user_registration <= \'[^\']+\'\)\)/',
-			reset( $conds ),
-			"rc conditions: userExpLevel=unregistered;experienced"
-		);
-	}
-
 	public function testFilterUserExpLevel() {
-		$now = time();
 		$this->setMwGlobals( [
 			'wgLearnerEdits' => 10,
 			'wgLearnerMemberSince' => 4,
@@ -500,12 +412,12 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 			'Learner3' => [ 'edits' => 460, 'days' => 33 ],
 			'Learner4' => [ 'edits' => 525, 'days' => 28 ],
 			'Experienced1' => [ 'edits' => 538, 'days' => 33 ],
-		], $now );
+		] );
 
 		// newcomers only
 		$this->assertArrayEquals(
 			[ 'Newcomer1', 'Newcomer2', 'Newcomer3' ],
-			$this->fetchUsers( [ 'newcomer' ], $now )
+			$this->fetchUsers( [ 'newcomer' ] )
 		);
 
 		// newcomers and learner
@@ -514,7 +426,7 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 				'Newcomer1', 'Newcomer2', 'Newcomer3',
 				'Learner1', 'Learner2', 'Learner3', 'Learner4',
 			],
-			$this->fetchUsers( [ 'newcomer', 'learner' ], $now )
+			$this->fetchUsers( [ 'newcomer', 'learner' ] )
 		);
 
 		// newcomers and more learner
@@ -523,19 +435,19 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 				'Newcomer1', 'Newcomer2', 'Newcomer3',
 				'Experienced1',
 			],
-			$this->fetchUsers( [ 'newcomer', 'experienced' ], $now )
+			$this->fetchUsers( [ 'newcomer', 'experienced' ] )
 		);
 
 		// learner only
 		$this->assertArrayEquals(
 			[ 'Learner1', 'Learner2', 'Learner3', 'Learner4' ],
-			$this->fetchUsers( [ 'learner' ], $now )
+			$this->fetchUsers( [ 'learner' ] )
 		);
 
 		// more experienced only
 		$this->assertArrayEquals(
 			[ 'Experienced1' ],
-			$this->fetchUsers( [ 'experienced' ], $now )
+			$this->fetchUsers( [ 'experienced' ] )
 		);
 
 		// learner and more experienced
@@ -544,26 +456,38 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 				'Learner1', 'Learner2', 'Learner3', 'Learner4',
 				'Experienced1',
 			],
-			$this->fetchUsers( [ 'learner', 'experienced' ], $now ),
+			$this->fetchUsers( [ 'learner', 'experienced' ] ),
 			'Learner and more experienced'
 		);
+
+		// newcomers, learner, and more experienced
+		// TOOD: Fix test.  This needs to test that anons are excluded,
+		// and right now the join fails.
+		/* $this->assertArrayEquals( */
+		/* 	[ */
+		/* 		'Newcomer1', 'Newcomer2', 'Newcomer3', */
+		/* 		'Learner1', 'Learner2', 'Learner3', 'Learner4', */
+		/* 		'Experienced1', */
+		/* 	], */
+		/* 	$this->fetchUsers( [ 'newcomer', 'learner', 'experienced' ] ) */
+		/* ); */
 	}
 
-	private function createUsers( $specs, $now ) {
+	private function createUsers( $specs ) {
 		$dbw = wfGetDB( DB_MASTER );
 		foreach ( $specs as $name => $spec ) {
 			User::createNew(
 				$name,
 				[
 					'editcount' => $spec['edits'],
-					'registration' => $dbw->timestamp( $this->daysAgo( $spec['days'], $now ) ),
+					'registration' => $dbw->timestamp( $this->daysAgo( $spec['days'] ) ),
 					'email' => 'ut',
 				]
 			);
 		}
 	}
 
-	private function fetchUsers( $filters, $now ) {
+	private function fetchUsers( $filters ) {
 		$tables = [];
 		$conds = [];
 		$fields = [];
@@ -583,13 +507,12 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 				&$conds,
 				&$query_options,
 				&$join_conds,
-				$filters,
-				$now
+				$filters
 			]
 		);
 
 		$result = wfGetDB( DB_MASTER )->select(
-			$tables,
+			'user',
 			'user_name',
 			array_filter( $conds ) + [ 'user_email' => 'ut' ]
 		);
@@ -602,9 +525,9 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 		return $usernames;
 	}
 
-	private function daysAgo( $days, $now ) {
+	private function daysAgo( $days ) {
 		$secondsPerDay = 86400;
-		return $now - $days * $secondsPerDay;
+		return time() - $days * $secondsPerDay;
 	}
 
 	public function testGetFilterGroupDefinitionFromLegacyCustomFilters() {
@@ -645,8 +568,6 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 	}
 
 	public function testGetStructuredFilterJsData() {
-		$this->changesListSpecialPage->filterGroups = [];
-
 		$definition = [
 			[
 				'name' => 'gub-group',
@@ -895,7 +816,7 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 					"hideliu" => true,
 					"userExpLevel" => "newcomer",
 				],
-				"expectedConflicts" => false,
+				"expectedConflicts" => true,
 			],
 			[
 				"parameters" => [
@@ -963,48 +884,5 @@ class ChangesListSpecialPageTest extends AbstractChangesListSpecialPageTestCase 
 			$expectedConflicts,
 			$this->changesListSpecialPage->areFiltersInConflict()
 		);
-	}
-
-	public function validateOptionsProvider() {
-		return [
-			[
-				[ 'hideanons' => 1, 'hideliu' => 1, 'hidebots' => 1 ],
-				true,
-				[ 'hideliu' => 1, 'hidebots' => 1, ],
-			],
-
-			[
-				[ 'hideanons' => 1, 'hideliu' => 1, 'hidebots' => 0 ],
-				true,
-				[ 'hidebots' => 0, 'hidehumans' => 1 ],
-			],
-
-			[
-				[ 'hidemyself' => 1, 'hidebyothers' => 1 ],
-				true,
-				[],
-			],
-			[
-				[ 'hidebots' => 1, 'hidehumans' => 1 ],
-				true,
-				[],
-			],
-			[
-				[ 'hidepatrolled' => 1, 'hideunpatrolled' => 1 ],
-				true,
-				[],
-			],
-			[
-				[ 'hideminor' => 1, 'hidemajor' => 1 ],
-				true,
-				[],
-			],
-			[
-				// changeType
-				[ 'hidepageedits' => 1, 'hidenewpages' => 1, 'hidecategorization' => 1, 'hidelog' => 1, ],
-				true,
-				[],
-			],
-		];
 	}
 }

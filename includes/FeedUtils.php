@@ -72,8 +72,7 @@ class FeedUtils {
 	/**
 	 * Format a diff for the newsfeed
 	 *
-	 * @param object $row Row from the recentchanges table, including fields as
-	 *  appropriate for CommentStore
+	 * @param object $row Row from the recentchanges table
 	 * @return string
 	 */
 	public static function formatDiff( $row ) {
@@ -89,9 +88,7 @@ class FeedUtils {
 			$timestamp,
 			$row->rc_deleted & Revision::DELETED_COMMENT
 				? wfMessage( 'rev-deleted-comment' )->escaped()
-				: CommentStore::newKey( 'rc_comment' )
-					// Legacy from RecentChange::selectFields() via ChangesListSpecialPage::doMainQuery()
-					->getCommentLegacy( wfGetDB( DB_REPLICA ), $row )->text,
+				: $row->rc_comment,
 			$actiontext
 		);
 	}
@@ -191,6 +188,7 @@ class FeedUtils {
 			}
 
 			if ( $html === null ) {
+
 				// Omit large new page diffs, T31110
 				// Also use diff link for non-textual content
 				$diffText = self::getDiffLink( $title, $newid );

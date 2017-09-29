@@ -1,22 +1,16 @@
 'use strict';
 const assert = require( 'assert' ),
 	CreateAccountPage = require( '../pageobjects/createaccount.page' ),
-	PreferencesPage = require( '../pageobjects/preferences.page' ),
-	UserLoginPage = require( '../pageobjects/userlogin.page' );
+	UserLoginPage = require( '../pageobjects/userlogin.page' ),
+	UserLogoutPage = require( '../pageobjects/userlogout.page' ),
+	PreferencesPage = require( '../pageobjects/preferences.page' );
 
 describe( 'User', function () {
 
 	var password,
 		username;
 
-	before( function () {
-		// disable VisualEditor welcome dialog
-		UserLoginPage.open();
-		browser.localStorage( 'POST', { key: 've-beta-welcome-dialog', value: '1' } );
-	} );
-
 	beforeEach( function () {
-		browser.deleteCookie();
 		username = `User-${Math.random().toString()}`;
 		password = Math.random().toString();
 	} );
@@ -34,9 +28,10 @@ describe( 'User', function () {
 	it( 'should be able to log in', function () {
 
 		// create
-		browser.call( function () {
-			return CreateAccountPage.apiCreateAccount( username, password );
-		} );
+		CreateAccountPage.createAccount( username, password );
+
+		// logout
+		UserLogoutPage.open();
 
 		// log in
 		UserLoginPage.login( username, password );
@@ -51,14 +46,9 @@ describe( 'User', function () {
 		var realName = Math.random().toString();
 
 		// create
-		browser.call( function () {
-			return CreateAccountPage.apiCreateAccount( username, password );
-		} );
+		CreateAccountPage.createAccount( username, password );
 
-		// log in
-		UserLoginPage.login( username, password );
-
-		// change
+		// change real name
 		PreferencesPage.changeRealName( realName );
 
 		// check

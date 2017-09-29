@@ -23,7 +23,6 @@
 namespace Wikimedia\Rdbms;
 
 use mysqli;
-use mysqli_result;
 use IP;
 
 /**
@@ -34,7 +33,7 @@ use IP;
  * @see Database
  */
 class DatabaseMysqli extends DatabaseMysqlBase {
-	/** @var mysqli $mConn */
+	/** @var $mConn mysqli */
 
 	/**
 	 * @param string $sql
@@ -91,7 +90,7 @@ class DatabaseMysqli extends DatabaseMysqlBase {
 			$mysqli->ssl_set(
 				$this->sslKeyPath,
 				$this->sslCertPath,
-				$this->sslCAFile,
+				null,
 				$this->sslCAPath,
 				$this->sslCiphers
 			);
@@ -191,7 +190,7 @@ class DatabaseMysqli extends DatabaseMysqlBase {
 	}
 
 	/**
-	 * @param mysqli_result $res
+	 * @param mysqli $res
 	 * @return bool
 	 */
 	protected function mysqlFreeResult( $res ) {
@@ -201,7 +200,7 @@ class DatabaseMysqli extends DatabaseMysqlBase {
 	}
 
 	/**
-	 * @param mysqli_result $res
+	 * @param mysqli $res
 	 * @return bool
 	 */
 	protected function mysqlFetchObject( $res ) {
@@ -214,7 +213,7 @@ class DatabaseMysqli extends DatabaseMysqlBase {
 	}
 
 	/**
-	 * @param mysqli_result $res
+	 * @param mysqli $res
 	 * @return bool
 	 */
 	protected function mysqlFetchArray( $res ) {
@@ -227,7 +226,7 @@ class DatabaseMysqli extends DatabaseMysqlBase {
 	}
 
 	/**
-	 * @param mysqli_result $res
+	 * @param mysqli $res
 	 * @return mixed
 	 */
 	protected function mysqlNumRows( $res ) {
@@ -288,7 +287,7 @@ class DatabaseMysqli extends DatabaseMysqlBase {
 	}
 
 	/**
-	 * @param mysqli_result $res
+	 * @param mysqli $res
 	 * @param int $row
 	 * @return mixed
 	 */

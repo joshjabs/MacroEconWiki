@@ -66,10 +66,7 @@ class OOUIHTMLForm extends HTMLForm {
 			}
 
 			if ( isset( $this->mSubmitTooltip ) ) {
-				$attribs += [
-					'title' => Linker::titleAttrib( $this->mSubmitTooltip ),
-					'accessKey' => Linker::accesskey( $this->mSubmitTooltip ),
-				];
+				$attribs += Linker::tooltipAndAccesskeyAttribs( $this->mSubmitTooltip );
 			}
 
 			$attribs['classes'] = [ 'mw-htmlform-submit' ];
@@ -176,17 +173,11 @@ class OOUIHTMLForm extends HTMLForm {
 	 * @return string HTML
 	 */
 	protected function formatSection( array $fieldsHtml, $sectionName, $anyFieldHasLabel ) {
-		if ( !$fieldsHtml ) {
-			// Do not generate any wrappers for empty sections. Sections may be empty if they only have
-			// subsections, but no fields. A legend will still be added in wrapFieldSetSection().
-			return '';
-		}
-
 		$config = [
 			'items' => $fieldsHtml,
 		];
 		if ( $sectionName ) {
-			$config['id'] = Sanitizer::escapeIdForAttribute( $sectionName );
+			$config['id'] = Sanitizer::escapeId( $sectionName );
 		}
 		if ( is_string( $this->mWrapperLegend ) ) {
 			$config['label'] = $this->mWrapperLegend;
@@ -200,10 +191,6 @@ class OOUIHTMLForm extends HTMLForm {
 	 * @return string
 	 */
 	public function getErrorsOrWarnings( $elements, $elementsType ) {
-		if ( $elements === '' ) {
-			return '';
-		}
-
 		if ( !in_array( $elementsType, [ 'error', 'warning' ], true ) ) {
 			throw new DomainException( $elementsType . ' is not a valid type.' );
 		}

@@ -211,10 +211,10 @@ class ParserOutput extends CacheTime {
 	 */
 	private $mFlags = [];
 
-	/** @var int|null Assumed rev ID for {{REVISIONID}} if no revision is set */
+	/** @var integer|null Assumed rev ID for {{REVISIONID}} if no revision is set */
 	private $mSpeculativeRevId;
 
-	/** @var int Upper bound of expiry based on parse duration */
+	/** @var integer Upper bound of expiry based on parse duration */
 	private $mMaxAdaptiveExpiry = INF;
 
 	const EDITSECTION_REGEX =
@@ -223,7 +223,7 @@ class ParserOutput extends CacheTime {
 	// finalizeAdaptiveCacheExpiry() uses TTL = MAX( m * PARSE_TIME + b, MIN_AR_TTL)
 	// Current values imply that m=3933.333333 and b=-333.333333
 	// See https://www.nngroup.com/articles/website-response-times/
-	const PARSE_FAST_SEC = 0.100; // perceived "fast" page parse
+	const PARSE_FAST_SEC = .100; // perceived "fast" page parse
 	const PARSE_SLOW_SEC = 1.0; // perceived "slow" page parse
 	const FAST_AR_TTL = 60; // adaptive TTL for "fast" pages
 	const SLOW_AR_TTL = 3600; // adaptive TTL for "slow" pages
@@ -243,7 +243,6 @@ class ParserOutput extends CacheTime {
 	 * return value is suitable for writing back via setText() but is not valid
 	 * for display to the user.
 	 *
-	 * @return string
 	 * @since 1.27
 	 */
 	public function getRawText() {
@@ -254,12 +253,12 @@ class ParserOutput extends CacheTime {
 		$text = $this->mText;
 		if ( $this->mEditSectionTokens ) {
 			$text = preg_replace_callback(
-				self::EDITSECTION_REGEX,
+				ParserOutput::EDITSECTION_REGEX,
 				function ( $m ) {
 					global $wgOut, $wgLang;
 					$editsectionPage = Title::newFromText( htmlspecialchars_decode( $m[1] ) );
 					$editsectionSection = htmlspecialchars_decode( $m[2] );
-					$editsectionContent = isset( $m[4] ) ? Sanitizer::decodeCharReferences( $m[3] ) : null;
+					$editsectionContent = isset( $m[4] ) ? $m[3] : null;
 
 					if ( !is_object( $editsectionPage ) ) {
 						throw new MWException( "Bad parser output text." );
@@ -275,7 +274,7 @@ class ParserOutput extends CacheTime {
 				$text
 			);
 		} else {
-			$text = preg_replace( self::EDITSECTION_REGEX, '', $text );
+			$text = preg_replace( ParserOutput::EDITSECTION_REGEX, '', $text );
 		}
 
 		// If you have an old cached version of this class - sorry, you can't disable the TOC
@@ -292,17 +291,14 @@ class ParserOutput extends CacheTime {
 	}
 
 	/**
-	 * @param int $id
+	 * @param integer $id
 	 * @since 1.28
 	 */
 	public function setSpeculativeRevIdUsed( $id ) {
 		$this->mSpeculativeRevId = $id;
 	}
 
-	/**
-	 * @return int|null
-	 * @since 1.28
-	 */
+	/** @since 1.28 */
 	public function getSpeculativeRevIdUsed() {
 		return $this->mSpeculativeRevId;
 	}
@@ -324,7 +320,6 @@ class ParserOutput extends CacheTime {
 	}
 
 	/**
-	 * @return array
 	 * @since 1.25
 	 */
 	public function getIndicators() {
@@ -387,10 +382,7 @@ class ParserOutput extends CacheTime {
 		return $this->mModuleStyles;
 	}
 
-	/**
-	 * @return array
-	 * @since 1.23
-	 */
+	/** @since 1.23 */
 	public function getJsConfigVars() {
 		return $this->mJsConfigVars;
 	}
@@ -479,8 +471,6 @@ class ParserOutput extends CacheTime {
 	}
 
 	/**
-	 * @param string $id
-	 * @param string $content
 	 * @since 1.25
 	 */
 	public function setIndicator( $id, $content ) {
@@ -718,7 +708,7 @@ class ParserOutput extends CacheTime {
 	 * @since 1.25
 	 */
 	public function addTrackingCategory( $msg, $title ) {
-		if ( $title->isSpecialPage() ) {
+		if ( $title->getNamespace() === NS_SPECIAL ) {
 			wfDebug( __METHOD__ . ": Not adding tracking category $msg to special page!\n" );
 			return false;
 		}
@@ -846,8 +836,6 @@ class ParserOutput extends CacheTime {
 	 * @code
 	 *    $parser->getOutput()->my_ext_foo = '...';
 	 * @endcode
-	 * @param string $name
-	 * @param mixed $value
 	 */
 	public function setProperty( $name, $value ) {
 		$this->mProperties[$name] = $value;
@@ -1087,7 +1075,7 @@ class ParserOutput extends CacheTime {
 	/**
 	 * Lower the runtime adaptive TTL to at most this value
 	 *
-	 * @param int $ttl
+	 * @param integer $ttl
 	 * @since 1.28
 	 */
 	public function updateRuntimeAdaptiveExpiry( $ttl ) {

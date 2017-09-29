@@ -305,7 +305,6 @@ class TitleMethodsTest extends MediaWikiLangTestCase {
 			[ 'Help:Main Page', 'Help talk:Main Page' ],
 			[ 'Help talk:Main Page', 'Help:Main Page' ],
 			[ 'Special:FooBar', null ],
-			[ 'Media:File.jpg', null ],
 		];
 	}
 

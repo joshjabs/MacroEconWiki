@@ -22,7 +22,6 @@
  */
 use MediaWiki\Logger\LoggerFactory;
 use Wikimedia\Rdbms\ResultWrapper;
-use Wikimedia\Rdbms\FakeResultWrapper;
 use Wikimedia\Rdbms\IDatabase;
 
 /**
@@ -32,12 +31,6 @@ use Wikimedia\Rdbms\IDatabase;
  * @ingroup SpecialPage
  */
 abstract class ChangesListSpecialPage extends SpecialPage {
-	/**
-	 * Preference name for saved queries. Subclasses that use saved queries should override this.
-	 * @var string
-	 */
-	protected static $savedQueriesPreferenceName;
-
 	/** @var string */
 	protected $rcSubpage;
 
@@ -84,9 +77,6 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	public function __construct( $name, $restriction ) {
 		parent::__construct( $name, $restriction );
 
-		$nonRevisionTypes = [ RC_LOG ];
-		Hooks::run( 'SpecialWatchlistGetNonRevisionTypes', [ &$nonRevisionTypes ] );
-
 		$this->filterGroupDefinitions = [
 			[
 				'name' => 'registration',
@@ -95,30 +85,40 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 				'filters' => [
 					[
 						'name' => 'hideliu',
+						'label' => 'rcfilters-filter-registered-label',
+						'description' => 'rcfilters-filter-registered-description',
 						// rcshowhideliu-show, rcshowhideliu-hide,
 						// wlshowhideliu
 						'showHideSuffix' => 'showhideliu',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_user = 0';
 						},
-						'isReplacedInStructuredUi' => true,
+						'cssClassSuffix' => 'liu',
+						'isRowApplicableCallable' => function ( $ctx, $rc ) {
+							return $rc->getAttribute( 'rc_user' );
+						},
 
 					],
 					[
 						'name' => 'hideanons',
+						'label' => 'rcfilters-filter-unregistered-label',
+						'description' => 'rcfilters-filter-unregistered-description',
 						// rcshowhideanons-show, rcshowhideanons-hide,
 						// wlshowhideanons
 						'showHideSuffix' => 'showhideanons',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_user != 0';
 						},
-						'isReplacedInStructuredUi' => true,
+						'cssClassSuffix' => 'anon',
+						'isRowApplicableCallable' => function ( $ctx, $rc ) {
+							return !$rc->getAttribute( 'rc_user' );
+						},
 					]
 				],
 			],
@@ -127,26 +127,9 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 				'name' => 'userExpLevel',
 				'title' => 'rcfilters-filtergroup-userExpLevel',
 				'class' => ChangesListStringOptionsFilterGroup::class,
-				'isFullCoverage' => true,
+				// Excludes unregistered users
+				'isFullCoverage' => false,
 				'filters' => [
-					[
-						'name' => 'unregistered',
-						'label' => 'rcfilters-filter-user-experience-level-unregistered-label',
-						'description' => 'rcfilters-filter-user-experience-level-unregistered-description',
-						'cssClassSuffix' => 'user-unregistered',
-						'isRowApplicableCallable' => function ( $ctx, $rc ) {
-							return !$rc->getAttribute( 'rc_user' );
-						}
-					],
-					[
-						'name' => 'registered',
-						'label' => 'rcfilters-filter-user-experience-level-registered-label',
-						'description' => 'rcfilters-filter-user-experience-level-registered-description',
-						'cssClassSuffix' => 'user-registered',
-						'isRowApplicableCallable' => function ( $ctx, $rc ) {
-							return $rc->getAttribute( 'rc_user' );
-						}
-					],
 					[
 						'name' => 'newcomer',
 						'label' => 'rcfilters-filter-user-experience-level-newcomer-label',
@@ -199,8 +182,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'showHideSuffix' => 'showhidemine',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$user = $ctx->getUser();
 							$conds[] = 'rc_user_text != ' . $dbr->addQuotes( $user->getName() );
 						},
@@ -215,8 +198,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'description' => 'rcfilters-filter-editsbyother-description',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$user = $ctx->getUser();
 							$conds[] = 'rc_user_text = ' . $dbr->addQuotes( $user->getName() );
 						},
@@ -242,8 +225,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'showHideSuffix' => 'showhidebots',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_bot = 0';
 						},
 						'cssClassSuffix' => 'bot',
@@ -257,8 +240,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'description' => 'rcfilters-filter-humans-description',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_bot = 1';
 						},
 						'cssClassSuffix' => 'human',
@@ -286,8 +269,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'showHideSuffix' => 'showhideminor',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_minor = 0';
 						},
 						'cssClassSuffix' => 'minor',
@@ -301,8 +284,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'description' => 'rcfilters-filter-major-description',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_minor = 1';
 						},
 						'cssClassSuffix' => 'major',
@@ -313,61 +296,11 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 				]
 			],
 
-			[
-				'name' => 'lastRevision',
-				'title' => 'rcfilters-filtergroup-lastRevision',
-				'class' => ChangesListBooleanFilterGroup::class,
-				'priority' => -7,
-				'filters' => [
-					[
-						'name' => 'hidelastrevision',
-						'label' => 'rcfilters-filter-lastrevision-label',
-						'description' => 'rcfilters-filter-lastrevision-description',
-						'default' => false,
-						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds ) use ( $nonRevisionTypes ) {
-							$conds[] = $dbr->makeList(
-								[
-									'rc_this_oldid <> page_latest',
-									'rc_type' => $nonRevisionTypes,
-								],
-								LIST_OR
-							);
-						},
-						'cssClassSuffix' => 'last',
-						'isRowApplicableCallable' => function ( $ctx, $rc ) {
-							return $rc->getAttribute( 'rc_this_oldid' ) === $rc->getAttribute( 'page_latest' );
-						}
-					],
-					[
-						'name' => 'hidepreviousrevisions',
-						'label' => 'rcfilters-filter-previousrevision-label',
-						'description' => 'rcfilters-filter-previousrevision-description',
-						'default' => false,
-						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds ) use ( $nonRevisionTypes ) {
-							$conds[] = $dbr->makeList(
-								[
-									'rc_this_oldid = page_latest',
-									'rc_type' => $nonRevisionTypes,
-								],
-								LIST_OR
-							);
-						},
-						'cssClassSuffix' => 'previous',
-						'isRowApplicableCallable' => function ( $ctx, $rc ) {
-							return $rc->getAttribute( 'rc_this_oldid' ) !== $rc->getAttribute( 'page_latest' );
-						}
-					]
-				]
-			],
-
 			// With extensions, there can be change types that will not be hidden by any of these.
 			[
 				'name' => 'changeType',
 				'title' => 'rcfilters-filtergroup-changetype',
 				'class' => ChangesListBooleanFilterGroup::class,
-				'priority' => -8,
 				'filters' => [
 					[
 						'name' => 'hidepageedits',
@@ -376,8 +309,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'default' => false,
 						'priority' => -2,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_type != ' . $dbr->addQuotes( RC_EDIT );
 						},
 						'cssClassSuffix' => 'src-mw-edit',
@@ -392,8 +325,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'default' => false,
 						'priority' => -3,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_type != ' . $dbr->addQuotes( RC_NEW );
 						},
 						'cssClassSuffix' => 'src-mw-new',
@@ -411,8 +344,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'default' => false,
 						'priority' => -5,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_type != ' . $dbr->addQuotes( RC_LOG );
 						},
 						'cssClassSuffix' => 'src-mw-log',
@@ -422,7 +355,6 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 					],
 				],
 			],
-
 		];
 
 		$this->reviewStatusFilterGroupDefinition = [
@@ -441,8 +373,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'showHideSuffix' => 'showhidepatr',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_patrolled = 0';
 						},
 						'cssClassSuffix' => 'patrolled',
@@ -456,8 +388,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 						'description' => 'rcfilters-filter-unpatrolled-description',
 						'default' => false,
 						'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-							&$query_options, &$join_conds
-						) {
+							&$query_options, &$join_conds ) {
+
 							$conds[] = 'rc_patrolled = 1';
 						},
 						'cssClassSuffix' => 'unpatrolled',
@@ -479,8 +411,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 			'default' => false,
 			'priority' => -4,
 			'queryCallable' => function ( $specialClassName, $ctx, $dbr, &$tables, &$fields, &$conds,
-				&$query_options, &$join_conds
-			) {
+				&$query_options, &$join_conds ) {
+
 				$conds[] = 'rc_type != ' . $dbr->addQuotes( RC_CATEGORIZE );
 			},
 			'cssClassSuffix' => 'src-mw-categorize',
@@ -499,6 +431,7 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 		$opts = $this->getOptions();
 		/** @var ChangesListFilterGroup $group */
 		foreach ( $this->getFilterGroups() as $group ) {
+
 			if ( $group->getConflictingGroups() ) {
 				wfLogWarning(
 					$group->getName() .
@@ -515,6 +448,7 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 
 			/** @var ChangesListFilter $filter */
 			foreach ( $group->getFilters() as $filter ) {
+
 				/** @var ChangesListFilter $conflictingFilter */
 				foreach ( $filter->getConflictingFilters() as $conflictingFilter ) {
 					if (
@@ -540,22 +474,19 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	public function execute( $subpage ) {
 		$this->rcSubpage = $subpage;
 
+		$this->setHeaders();
+		$this->outputHeader();
+		$this->addModules();
+
 		$rows = $this->getRows();
 		$opts = $this->getOptions();
 		if ( $rows === false ) {
-			$rows = new FakeResultWrapper( [] );
-		}
+			if ( !$this->including() ) {
+				$this->doHeader( $opts, 0 );
+				$this->outputNoResults();
+				$this->getOutput()->setStatusCode( 404 );
+			}
 
-		// Used by Structured UI app to get results without MW chrome
-		if ( $this->getRequest()->getVal( 'action' ) === 'render' ) {
-			$this->getOutput()->setArticleBodyOnly( true );
-		}
-
-		// Used by "live update" and "view newest" to check
-		// if there's new changes with minimal data transfer
-		if ( $this->getRequest()->getBool( 'peek' ) ) {
-			$code = $rows->numRows() > 0 ? 200 : 204;
-			$this->getOutput()->setStatusCode( $code );
 			return;
 		}
 
@@ -572,10 +503,6 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 			}
 		}
 		$batch->execute();
-
-		$this->setHeaders();
-		$this->outputHeader();
-		$this->addModules();
 		$this->webOutput( $rows, $opts );
 
 		$rows->free();
@@ -587,134 +514,6 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 				LoggerFactory::getInstance( 'objectcache' )
 			) );
 		}
-
-		$this->includeRcFiltersApp();
-	}
-
-	/**
-	 * Include the modules and configuration for the RCFilters app.
-	 * Conditional on the user having the feature enabled.
-	 *
-	 * If it is disabled, add a <body> class marking that
-	 */
-	protected function includeRcFiltersApp() {
-		$out = $this->getOutput();
-		if ( $this->isStructuredFilterUiEnabled() ) {
-			$jsData = $this->getStructuredFilterJsData();
-
-			$messages = [];
-			foreach ( $jsData['messageKeys'] as $key ) {
-				$messages[$key] = $this->msg( $key )->plain();
-			}
-
-			$out->addBodyClasses( 'mw-rcfilters-enabled' );
-
-			$out->addHTML(
-				ResourceLoader::makeInlineScript(
-					ResourceLoader::makeMessageSetScript( $messages )
-				)
-			);
-
-			$out->addJsConfigVars( 'wgStructuredChangeFilters', $jsData['groups'] );
-
-			$out->addJsConfigVars(
-				'wgRCFiltersChangeTags',
-				$this->getChangeTagList()
-			);
-			$out->addJsConfigVars(
-				'StructuredChangeFiltersDisplayConfig',
-				[
-					'maxDays' => (int)$this->getConfig()->get( 'RCMaxAge' ) / ( 24 * 3600 ), // Translate to days
-					'limitArray' => $this->getConfig()->get( 'RCLinkLimits' ),
-					'limitDefault' => $this->getDefaultLimit(),
-					'daysArray' => $this->getConfig()->get( 'RCLinkDays' ),
-					'daysDefault' => $this->getDefaultDays(),
-				]
-			);
-
-			$out->addJsConfigVars(
-				'StructuredChangeFiltersLiveUpdatePollingRate',
-				$this->getConfig()->get( 'StructuredChangeFiltersLiveUpdatePollingRate' )
-			);
-
-			if ( static::$savedQueriesPreferenceName ) {
-				$savedQueries = FormatJson::decode(
-					$this->getUser()->getOption( static::$savedQueriesPreferenceName )
-				);
-				if ( $savedQueries && isset( $savedQueries->default ) ) {
-					// If there is a default saved query, show a loading spinner,
-					// since the frontend is going to reload the results
-					$out->addBodyClasses( 'mw-rcfilters-ui-loading' );
-				}
-				$out->addJsConfigVars(
-					'wgStructuredChangeFiltersSavedQueriesPreferenceName',
-					static::$savedQueriesPreferenceName
-				);
-			}
-		} else {
-			$out->addBodyClasses( 'mw-rcfilters-disabled' );
-		}
-	}
-
-	/**
-	 * Fetch the change tags list for the front end
-	 *
-	 * @return Array Tag data
-	 */
-	protected function getChangeTagList() {
-		$cache = ObjectCache::getMainWANInstance();
-		$context = $this->getContext();
-		return $cache->getWithSetCallback(
-			$cache->makeKey( 'changeslistspecialpage-changetags', $context->getLanguage()->getCode() ),
-			$cache::TTL_MINUTE * 10,
-			function () use ( $context ) {
-				$explicitlyDefinedTags = array_fill_keys( ChangeTags::listExplicitlyDefinedTags(), 0 );
-				$softwareActivatedTags = array_fill_keys( ChangeTags::listSoftwareActivatedTags(), 0 );
-
-				// Hit counts disabled for perf reasons, see T169997
-				/*
-				$tagStats = ChangeTags::tagUsageStatistics();
-				$tagHitCounts = array_merge( $explicitlyDefinedTags, $softwareActivatedTags, $tagStats );
-
-				// Sort by hits
-				arsort( $tagHitCounts );
-				*/
-				$tagHitCounts = array_merge( $explicitlyDefinedTags, $softwareActivatedTags );
-
-				// Build the list and data
-				$result = [];
-				foreach ( $tagHitCounts as $tagName => $hits ) {
-					if (
-						// Only get active tags
-						isset( $explicitlyDefinedTags[ $tagName ] ) ||
-						isset( $softwareActivatedTags[ $tagName ] )
-					) {
-						// Parse description
-						$desc = ChangeTags::tagLongDescriptionMessage( $tagName, $context );
-
-						$result[] = [
-							'name' => $tagName,
-							'label' => Sanitizer::stripAllTags(
-								ChangeTags::tagDescription( $tagName, $context )
-							),
-							'description' => $desc ? Sanitizer::stripAllTags( $desc->parse() ) : '',
-							'cssClass' => Sanitizer::escapeClass( 'mw-tag-' . $tagName ),
-							'hits' => $hits,
-						];
-					}
-				}
-
-				// Instead of sorting by hit count (disabled, see above), sort by display name
-				usort( $result, function ( $a, $b ) {
-					return strcasecmp( $a['label'], $b['label'] );
-				} );
-
-				return $result;
-			},
-			[
-				'lockTSE' => 30
-			]
-		);
 	}
 
 	/**
@@ -773,7 +572,7 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 
 		// Make sure this is not being transcluded (we don't want to show this
 		// information to all users just because the user that saves the edit can
-		// patrol or is logged in)
+		// patrol)
 		if ( !$this->including() && $this->getUser()->useRCPatrol() ) {
 			$this->registerFiltersFromDefinitions( $this->reviewStatusFilterGroupDefinition );
 		}
@@ -801,10 +600,19 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 		$this->registerFiltersFromDefinitions( [ $unstructuredGroupDefinition ] );
 
 		$userExperienceLevel = $this->getFilterGroup( 'userExpLevel' );
-		$registered = $userExperienceLevel->getFilter( 'registered' );
-		$registered->setAsSupersetOf( $userExperienceLevel->getFilter( 'newcomer' ) );
-		$registered->setAsSupersetOf( $userExperienceLevel->getFilter( 'learner' ) );
-		$registered->setAsSupersetOf( $userExperienceLevel->getFilter( 'experienced' ) );
+
+		$registration = $this->getFilterGroup( 'registration' );
+		$anons = $registration->getFilter( 'hideanons' );
+
+		// This means there is a conflict between any item in user experience level
+		// being checked and only anons being *shown* (hideliu=1&hideanons=0 in the
+		// URL, or equivalent).
+		$userExperienceLevel->conflictsWith(
+			$anons,
+			'rcfilters-filtergroup-user-experience-level-conflicts-unregistered-global',
+			'rcfilters-filtergroup-user-experience-level-conflicts-unregistered',
+			'rcfilters-filter-unregistered-conflicts-user-experience-level'
+		);
 
 		$categoryFilter = $changeTypeGroup->getFilter( 'hidecategorization' );
 		$logactionsFilter = $changeTypeGroup->getFilter( 'hidelog' );
@@ -856,7 +664,6 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	 * ChangesListFilterGroup constructors.
 	 *
 	 * There is light processing to simplify core maintenance.
-	 * @param array $definition
 	 */
 	protected function registerFiltersFromDefinitions( array $definition ) {
 		$autoFillPriority = -1;
@@ -884,10 +691,10 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	/**
 	 * Get filter group definition from legacy custom filters
 	 *
-	 * @param array $customFilters Custom filters from legacy hooks
+	 * @param array Custom filters from legacy hooks
 	 * @return array Group definition
 	 */
-	protected function getFilterGroupDefinitionFromLegacyCustomFilters( array $customFilters ) {
+	protected function getFilterGroupDefinitionFromLegacyCustomFilters( $customFilters ) {
 		// Special internal unstructured group
 		$unstructuredGroupDefinition = [
 			'name' => 'unstructured',
@@ -942,36 +749,26 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	 * @return FormOptions
 	 */
 	public function getDefaultOptions() {
+		$config = $this->getConfig();
 		$opts = new FormOptions();
-		$structuredUI = $this->isStructuredFilterUiEnabled();
-		// If urlversion=2 is set, ignore the filter defaults and set them all to false/empty
-		$useDefaults = $this->getRequest()->getInt( 'urlversion' ) !== 2;
+		$structuredUI = $this->getUser()->getOption( 'rcenhancedfilters' );
 
 		// Add all filters
-		/** @var ChangesListFilterGroup $filterGroup */
 		foreach ( $this->filterGroups as $filterGroup ) {
 			// URL parameters can be per-group, like 'userExpLevel',
 			// or per-filter, like 'hideminor'.
 			if ( $filterGroup->isPerGroupRequestParameter() ) {
-				$opts->add( $filterGroup->getName(), $useDefaults ? $filterGroup->getDefault() : '' );
+				$opts->add( $filterGroup->getName(), $filterGroup->getDefault() );
 			} else {
-				/** @var ChangesListBooleanFilter $filter */
 				foreach ( $filterGroup->getFilters() as $filter ) {
-					$opts->add( $filter->getName(), $useDefaults ? $filter->getDefault( $structuredUI ) : false );
+					$opts->add( $filter->getName(), $filter->getDefault( $structuredUI ) );
 				}
 			}
 		}
 
-		$opts->add( 'namespace', '', FormOptions::STRING );
+		$opts->add( 'namespace', '', FormOptions::INTNULL );
 		$opts->add( 'invert', false );
 		$opts->add( 'associated', false );
-		$opts->add( 'urlversion', 1 );
-		$opts->add( 'tagfilter', '' );
-
-		$opts->add( 'days', $this->getDefaultDays(), FormOptions::FLOAT );
-		$opts->add( 'limit', $this->getDefaultLimit(), FormOptions::INT );
-
-		$opts->add( 'from', '' );
 
 		return $opts;
 	}
@@ -1026,6 +823,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 			'groups' => [],
 			'messageKeys' => [],
 		];
+
+		$context = $this->getContext();
 
 		usort( $this->filterGroups, function ( $a, $b ) {
 			return $b->getPriority() - $a->getPriority();
@@ -1122,93 +921,7 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	 * @param FormOptions $opts
 	 */
 	public function validateOptions( FormOptions $opts ) {
-		if ( $this->fixContradictoryOptions( $opts ) ) {
-			$query = wfArrayToCgi( $this->convertParamsForLink( $opts->getChangedValues() ) );
-			$this->getOutput()->redirect( $this->getPageTitle()->getCanonicalURL( $query ) );
-		}
-
-		$opts->validateIntBounds( 'limit', 0, 5000 );
-		$opts->validateBounds( 'days', 0, $this->getConfig()->get( 'RCMaxAge' ) / ( 3600 * 24 ) );
-	}
-
-	/**
-	 * Fix invalid options by resetting pairs that should never appear together.
-	 *
-	 * @param FormOptions $opts
-	 * @return bool True if any option was reset
-	 */
-	private function fixContradictoryOptions( FormOptions $opts ) {
-		$fixed = $this->fixBackwardsCompatibilityOptions( $opts );
-
-		foreach ( $this->filterGroups as $filterGroup ) {
-			if ( $filterGroup instanceof ChangesListBooleanFilterGroup ) {
-				$filters = $filterGroup->getFilters();
-
-				if ( count( $filters ) === 1 ) {
-					// legacy boolean filters should not be considered
-					continue;
-				}
-
-				$allInGroupEnabled = array_reduce(
-					$filters,
-					function ( $carry, $filter ) use ( $opts ) {
-						return $carry && $opts[ $filter->getName() ];
-					},
-					/* initialValue */ count( $filters ) > 0
-				);
-
-				if ( $allInGroupEnabled ) {
-					foreach ( $filters as $filter ) {
-						$opts[ $filter->getName() ] = false;
-					}
-
-					$fixed = true;
-				}
-			}
-		}
-
-		return $fixed;
-	}
-
-	/**
-	 * Fix a special case (hideanons=1 and hideliu=1) in a special way, for backwards
-	 * compatibility.
-	 *
-	 * This is deprecated and may be removed.
-	 *
-	 * @param FormOptions $opts
-	 * @return bool True if this change was mode
-	 */
-	private function fixBackwardsCompatibilityOptions( FormOptions $opts ) {
-		if ( $opts['hideanons'] && $opts['hideliu'] ) {
-			$opts->reset( 'hideanons' );
-			if ( !$opts['hidebots'] ) {
-				$opts->reset( 'hideliu' );
-				$opts['hidehumans'] = 1;
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Convert parameters values from true/false to 1/0
-	 * so they are not omitted by wfArrayToCgi()
-	 * Bug 36524
-	 *
-	 * @param array $params
-	 * @return array
-	 */
-	protected function convertParamsForLink( $params ) {
-		foreach ( $params as &$value ) {
-			if ( $value === false ) {
-				$value = '0';
-			}
-		}
-		unset( $value );
-		return $params;
+		// nothing by default
 	}
 
 	/**
@@ -1223,11 +936,12 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	 * @param FormOptions $opts
 	 */
 	protected function buildQuery( &$tables, &$fields, &$conds, &$query_options,
-		&$join_conds, FormOptions $opts
-	) {
-		$dbr = $this->getDB();
-		$isStructuredUI = $this->isStructuredFilterUiEnabled();
+		&$join_conds, FormOptions $opts ) {
 
+		$dbr = $this->getDB();
+		$user = $this->getUser();
+
+		$context = $this->getContext();
 		foreach ( $this->filterGroups as $filterGroup ) {
 			// URL parameters can be per-group, like 'userExpLevel',
 			// or per-filter, like 'hideminor'.
@@ -1236,7 +950,7 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 					$query_options, $join_conds, $opts[$filterGroup->getName()] );
 			} else {
 				foreach ( $filterGroup->getFilters() as $filter ) {
-					if ( $filter->isActive( $opts, $isStructuredUI ) ) {
+					if ( $opts[$filter->getName()] ) {
 						$filter->modifyQuery( $dbr, $this, $tables, $fields, $conds,
 							$query_options, $join_conds );
 					}
@@ -1245,42 +959,26 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 		}
 
 		// Namespace filtering
-		if ( $opts[ 'namespace' ] !== '' ) {
-			$namespaces = explode( ';', $opts[ 'namespace' ] );
+		if ( $opts['namespace'] !== '' ) {
+			$selectedNS = $dbr->addQuotes( $opts['namespace'] );
+			$operator = $opts['invert'] ? '!=' : '=';
+			$boolean = $opts['invert'] ? 'AND' : 'OR';
 
-			if ( $opts[ 'associated' ] ) {
-				$associatedNamespaces = array_map(
-					function ( $ns ) {
-						return MWNamespace::getAssociated( $ns );
-					},
-					$namespaces
-				);
-				$namespaces = array_unique( array_merge( $namespaces, $associatedNamespaces ) );
-			}
-
-			if ( count( $namespaces ) === 1 ) {
-				$operator = $opts[ 'invert' ] ? '!=' : '=';
-				$value = $dbr->addQuotes( reset( $namespaces ) );
+			// Namespace association (T4429)
+			if ( !$opts['associated'] ) {
+				$condition = "rc_namespace $operator $selectedNS";
 			} else {
-				$operator = $opts[ 'invert' ] ? 'NOT IN' : 'IN';
-				sort( $namespaces );
-				$value = '(' . $dbr->makeList( $namespaces ) . ')';
+				// Also add the associated namespace
+				$associatedNS = $dbr->addQuotes(
+					MWNamespace::getAssociated( $opts['namespace'] )
+				);
+				$condition = "(rc_namespace $operator $selectedNS "
+					. $boolean
+					. " rc_namespace $operator $associatedNS)";
 			}
-			$conds[] = "rc_namespace $operator $value";
+
+			$conds[] = $condition;
 		}
-
-		// Calculate cutoff
-		$cutoff_unixtime = time() - $opts['days'] * 3600 * 24;
-		$cutoff = $dbr->timestamp( $cutoff_unixtime );
-
-		$fromValid = preg_match( '/^[0-9]{14}$/', $opts['from'] );
-		if ( $fromValid && $opts['from'] > wfTimestamp( TS_MW, $cutoff ) ) {
-			$cutoff = $dbr->timestamp( $opts['from'] );
-		} else {
-			$opts->reset( 'from' );
-		}
-
-		$conds[] = 'rc_timestamp >= ' . $dbr->addQuotes( $cutoff );
 	}
 
 	/**
@@ -1295,8 +993,8 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	 * @return bool|ResultWrapper Result or false
 	 */
 	protected function doMainQuery( $tables, $fields, $conds,
-		$query_options, $join_conds, FormOptions $opts
-	) {
+		$query_options, $join_conds, FormOptions $opts ) {
+
 		$tables[] = 'recentchanges';
 		$fields = array_merge( RecentChange::selectFields(), $fields );
 
@@ -1308,6 +1006,15 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 			$query_options,
 			''
 		);
+
+		// It makes no sense to hide both anons and logged-in users. When this occurs, try a guess on
+		// what the user meant and either show only bots or force anons to be shown.
+
+		// -------
+
+		// XXX: We're no longer doing this handling.  To preserve back-compat, we need to complete
+		// T151873 (particularly the hideanons/hideliu/hidebots/hidehumans part) in conjunction
+		// with merging this.
 
 		if ( !$this->runMainQueryHook( $tables, $fields, $conds, $query_options, $join_conds,
 			$opts )
@@ -1462,14 +1169,10 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 		) . "\n";
 		$legend .= Html::closeElement( 'dl' ) . "\n";
 
-		$legendHeading = $this->isStructuredFilterUiEnabled() ?
-			$context->msg( 'rcfilters-legend-heading' )->parse() :
-			$context->msg( 'recentchanges-legend-heading' )->parse();
-
-		# Collapsible
+		# Collapsibility
 		$legend =
 			'<div class="mw-changeslist-legend">' .
-				$legendHeading .
+				$context->msg( 'recentchanges-legend-heading' )->parse() .
 				'<div class="mw-collapsible-content">' . $legend . '</div>' .
 			'</div>';
 
@@ -1487,11 +1190,6 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 			'mediawiki.special.changeslist',
 		] );
 		$out->addModules( 'mediawiki.special.changeslist.legend.js' );
-
-		if ( $this->isStructuredFilterUiEnabled() ) {
-			$out->addModules( 'mediawiki.rcfilters.filters.ui' );
-			$out->addModuleStyles( 'mediawiki.rcfilters.filters.base.styles' );
-		}
 	}
 
 	protected function getGroupName() {
@@ -1511,52 +1209,28 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 	 * @param array &$query_options Array of query options; see IDatabase::select $options
 	 * @param array &$join_conds Array of join conditions; see IDatabase::select $join_conds
 	 * @param array $selectedExpLevels The allowed active values, sorted
-	 * @param int $now Number of seconds since the UNIX epoch, or 0 if not given
-	 *   (optional)
 	 */
 	public function filterOnUserExperienceLevel( $specialPageClassName, $context, $dbr,
-		&$tables, &$fields, &$conds, &$query_options, &$join_conds, $selectedExpLevels, $now = 0
-	) {
+		&$tables, &$fields, &$conds, &$query_options, &$join_conds, $selectedExpLevels ) {
+
 		global $wgLearnerEdits,
 			$wgExperiencedUserEdits,
 			$wgLearnerMemberSince,
 			$wgExperiencedUserMemberSince;
 
-		$LEVEL_COUNT = 5;
+		$LEVEL_COUNT = 3;
 
-		// If all levels are selected, don't filter
+		// If all levels are selected, all logged-in users are included (but no
+		// anons), so we can short-circuit.
 		if ( count( $selectedExpLevels ) === $LEVEL_COUNT ) {
-			return;
-		}
-
-		// both 'registered' and 'unregistered', experience levels, if any, are included in 'registered'
-		if (
-			in_array( 'registered', $selectedExpLevels ) &&
-			in_array( 'unregistered', $selectedExpLevels )
-		) {
-			return;
-		}
-
-		// 'registered' but not 'unregistered', experience levels, if any, are included in 'registered'
-		if (
-			in_array( 'registered', $selectedExpLevels ) &&
-			!in_array( 'unregistered', $selectedExpLevels )
-		) {
 			$conds[] = 'rc_user != 0';
-			return;
-		}
-
-		if ( $selectedExpLevels === [ 'unregistered' ] ) {
-			$conds[] = 'rc_user = 0';
 			return;
 		}
 
 		$tables[] = 'user';
 		$join_conds['user'] = [ 'LEFT JOIN', 'rc_user = user_id' ];
 
-		if ( $now === 0 ) {
-			$now = time();
-		}
+		$now = time();
 		$secondsPerDay = 86400;
 		$learnerCutoff = $now - $wgLearnerMemberSince * $secondsPerDay;
 		$experiencedUserCutoff = $now - $wgExperiencedUserMemberSince * $secondsPerDay;
@@ -1564,7 +1238,7 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 		$aboveNewcomer = $dbr->makeList(
 			[
 				'user_editcount >= ' . intval( $wgLearnerEdits ),
-				'user_registration <= ' . $dbr->addQuotes( $dbr->timestamp( $learnerCutoff ) ),
+				'user_registration <= ' . $dbr->timestamp( $learnerCutoff ),
 			],
 			IDatabase::LIST_AND
 		);
@@ -1572,87 +1246,29 @@ abstract class ChangesListSpecialPage extends SpecialPage {
 		$aboveLearner = $dbr->makeList(
 			[
 				'user_editcount >= ' . intval( $wgExperiencedUserEdits ),
-				'user_registration <= ' .
-					$dbr->addQuotes( $dbr->timestamp( $experiencedUserCutoff ) ),
+				'user_registration <= ' . $dbr->timestamp( $experiencedUserCutoff ),
 			],
 			IDatabase::LIST_AND
 		);
 
-		$conditions = [];
-
-		if ( in_array( 'unregistered', $selectedExpLevels ) ) {
-			$selectedExpLevels = array_diff( $selectedExpLevels, [ 'unregistered' ] );
-			$conditions[] = 'rc_user = 0';
-		}
-
 		if ( $selectedExpLevels === [ 'newcomer' ] ) {
-			$conditions[] = "NOT ( $aboveNewcomer )";
+			$conds[] = "NOT ( $aboveNewcomer )";
 		} elseif ( $selectedExpLevels === [ 'learner' ] ) {
-			$conditions[] = $dbr->makeList(
+			$conds[] = $dbr->makeList(
 				[ $aboveNewcomer, "NOT ( $aboveLearner )" ],
 				IDatabase::LIST_AND
 			);
 		} elseif ( $selectedExpLevels === [ 'experienced' ] ) {
-			$conditions[] = $aboveLearner;
+			$conds[] = $aboveLearner;
 		} elseif ( $selectedExpLevels === [ 'learner', 'newcomer' ] ) {
-			$conditions[] = "NOT ( $aboveLearner )";
+			$conds[] = "NOT ( $aboveLearner )";
 		} elseif ( $selectedExpLevels === [ 'experienced', 'newcomer' ] ) {
-			$conditions[] = $dbr->makeList(
+			$conds[] = $dbr->makeList(
 				[ "NOT ( $aboveNewcomer )", $aboveLearner ],
 				IDatabase::LIST_OR
 			);
 		} elseif ( $selectedExpLevels === [ 'experienced', 'learner' ] ) {
-			$conditions[] = $aboveNewcomer;
-		} elseif ( $selectedExpLevels === [ 'experienced', 'learner', 'newcomer' ] ) {
-			$conditions[] = 'rc_user != 0';
-		}
-
-		if ( count( $conditions ) > 1 ) {
-			$conds[] = $dbr->makeList( $conditions, IDatabase::LIST_OR );
-		} elseif ( count( $conditions ) === 1 ) {
-			$conds[] = reset( $conditions );
+			$conds[] = $aboveNewcomer;
 		}
 	}
-
-	/**
-	 * Check whether the structured filter UI is enabled
-	 *
-	 * @return bool
-	 */
-	public function isStructuredFilterUiEnabled() {
-		if ( $this->getRequest()->getBool( 'rcfilters' ) ) {
-			return true;
-		}
-
-		if ( $this->getConfig()->get( 'StructuredChangeFiltersShowPreference' ) ) {
-			return !$this->getUser()->getOption( 'rcenhancedfilters-disable' );
-		} else {
-			return $this->getUser()->getOption( 'rcenhancedfilters' );
-		}
-	}
-
-	/**
-	 * Check whether the structured filter UI is enabled by default (regardless of
-	 * this particular user's setting)
-	 *
-	 * @return bool
-	 */
-	public function isStructuredFilterUiEnabledByDefault() {
-		if ( $this->getConfig()->get( 'StructuredChangeFiltersShowPreference' ) ) {
-			return !$this->getUser()->getDefaultOption( 'rcenhancedfilters-disable' );
-		} else {
-			return $this->getUser()->getDefaultOption( 'rcenhancedfilters' );
-		}
-	}
-
-	abstract function getDefaultLimit();
-
-	/**
-	 * Get the default value of the number of days to display when loading
-	 * the result set.
-	 * Supports fractional values, and should be cast to a float.
-	 *
-	 * @return float
-	 */
-	abstract function getDefaultDays();
 }

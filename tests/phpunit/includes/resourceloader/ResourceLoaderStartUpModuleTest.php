@@ -400,10 +400,6 @@ mw.loader.register( [
 		$module = new ResourceLoaderStartUpModule();
 		$out = ltrim( $case['out'], "\n" );
 
-		// Disable log from getModuleRegistrations via MWExceptionHandler
-		// for case where getVersionHash() is expected to throw.
-		$this->setLogger( 'exception', new Psr\Log\NullLogger() );
-
 		$this->assertEquals(
 			self::expandPlaceholders( $out ),
 			$module->getModuleRegistrations( $context ),

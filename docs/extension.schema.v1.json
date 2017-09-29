@@ -39,7 +39,7 @@
 		"url": {
 			"type": "string",
 			"description": "URL to the homepage for the extension.",
-			"format": "uri-reference"
+			"format": "uri"
 		},
 		"description": {
 			"type": "string",
@@ -576,7 +576,7 @@
 		},
 		"JobClasses": {
 			"type": "object",
-			"description": "Job types this extension implements (mapping of job type to class name or factory function)"
+			"description": "Job types this extension implements (mapping of job type to class name)"
 		},
 		"LogTypes": {
 			"type": "array",

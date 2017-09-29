@@ -298,6 +298,7 @@ abstract class DumpTestCase extends MediaWikiLangTestCase {
 	 * @param string $name Title of the current page
 	 */
 	protected function assertPageStart( $id, $ns, $name ) {
+
 		$this->assertNodeStart( "page" );
 		$this->skipWhitespace();
 
@@ -392,6 +393,7 @@ abstract class DumpTestCase extends MediaWikiLangTestCase {
 			if ( ( $this->xml->nodeType == XMLReader::END_ELEMENT )
 				&& ( $this->xml->name == "text" )
 			) {
+
 				$this->xml->read();
 			}
 			$this->skipWhitespace();

@@ -32,7 +32,6 @@ class SearchHighlighter {
 	/**
 	 * @warning If you pass false to this constructor, then
 	 *  the caller is responsible for HTML escaping.
-	 * @param bool $cleanupWikitext
 	 */
 	function __construct( $cleanupWikitext = true ) {
 		$this->mCleanWikitext = $cleanupWikitext;
@@ -292,8 +291,8 @@ class SearchHighlighter {
 	/**
 	 * Split text into lines and add it to extracts array
 	 *
-	 * @param array &$extracts Index -> $line
-	 * @param int &$count
+	 * @param array $extracts Index -> $line
+	 * @param int $count
 	 * @param string $text
 	 */
 	function splitAndAdd( &$extracts, &$count, $text ) {
@@ -327,8 +326,8 @@ class SearchHighlighter {
 	 * @param string $text
 	 * @param int $start
 	 * @param int $end
-	 * @param int &$posStart (out) actual start position
-	 * @param int &$posEnd (out) actual end position
+	 * @param int $posStart (out) actual start position
+	 * @param int $posEnd (out) actual end position
 	 * @return string
 	 */
 	function extract( $text, $start, $end, &$posStart = null, &$posEnd = null ) {
@@ -398,10 +397,10 @@ class SearchHighlighter {
 	 *
 	 * @param string $pattern Regexp for matching lines
 	 * @param array $extracts Extracts to search
-	 * @param int &$linesleft Number of extracts to make
-	 * @param int &$contextchars Length of snippet
-	 * @param array &$out Map for highlighted snippets
-	 * @param array &$offsets Map of starting points of snippets
+	 * @param int $linesleft Number of extracts to make
+	 * @param int $contextchars Length of snippet
+	 * @param array $out Map for highlighted snippets
+	 * @param array $offsets Map of starting points of snippets
 	 * @protected
 	 */
 	function process( $pattern, $extracts, &$linesleft, &$contextchars, &$out, &$offsets ) {

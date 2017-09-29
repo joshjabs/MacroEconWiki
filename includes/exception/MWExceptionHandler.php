@@ -128,6 +128,8 @@ class MWExceptionHandler {
 	public static function handleException( $e ) {
 		self::rollbackMasterChangesAndLog( $e );
 		self::report( $e );
+		// Exit value should be nonzero for the benefit of shell jobs
+		exit( 1 );
 	}
 
 	/**
@@ -442,24 +444,6 @@ TXT;
 	}
 
 	/**
-	 * Get a normalised message for formatting with PSR-3 log event context.
-	 *
-	 * Must be used together with `getLogContext()` to be useful.
-	 *
-	 * @since 1.30
-	 * @param Exception|Throwable $e
-	 * @return string
-	 */
-	public static function getLogNormalMessage( $e ) {
-		$type = get_class( $e );
-		$file = $e->getFile();
-		$line = $e->getLine();
-		$message = $e->getMessage();
-
-		return "[{exception_id}] {exception_url}   $type from line $line of $file: $message";
-	}
-
-	/**
 	 * @param Exception|Throwable $e
 	 * @return string
 	 */
@@ -486,7 +470,6 @@ TXT;
 		return [
 			'exception' => $e,
 			'exception_id' => WebRequest::getRequestId(),
-			'exception_url' => self::getURL() ?: '[no req]',
 			'caught_by' => $catcher
 		];
 	}
@@ -614,7 +597,7 @@ TXT;
 		if ( !( $e instanceof MWException ) || $e->isLoggable() ) {
 			$logger = LoggerFactory::getInstance( 'exception' );
 			$logger->error(
-				self::getLogNormalMessage( $e ),
+				self::getLogMessage( $e ),
 				self::getLogContext( $e, $catcher )
 			);
 
@@ -635,7 +618,7 @@ TXT;
 	 * @param ErrorException $e
 	 * @param string $channel
 	 * @param string $level
-	 */
+	*/
 	protected static function logError(
 		ErrorException $e, $channel, $level = LogLevel::ERROR
 	) {
@@ -648,7 +631,7 @@ TXT;
 			$logger = LoggerFactory::getInstance( $channel );
 			$logger->log(
 				$level,
-				self::getLogNormalMessage( $e ),
+				self::getLogMessage( $e ),
 				self::getLogContext( $e, $catcher )
 			);
 		}

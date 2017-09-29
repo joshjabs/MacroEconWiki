@@ -52,7 +52,7 @@ use Liuggio\StatsdClient\Factory\StatsdDataFactory;
  * belong here either. Session state changes should only be propagated on
  * shutdown by separate persistence handler objects, for example.
  */
-interface IContextSource extends MessageLocalizer {
+interface IContextSource {
 	/**
 	 * Get the WebRequest object
 	 *
@@ -131,7 +131,7 @@ interface IContextSource extends MessageLocalizer {
 	 * @deprecated since 1.27 use a StatsdDataFactory from MediaWikiServices (preferably injected)
 	 *
 	 * @since 1.25
-	 * @return IBufferingStatsdDataFactory
+	 * @return StatsdDataFactory
 	 */
 	public function getStats();
 
@@ -142,6 +142,14 @@ interface IContextSource extends MessageLocalizer {
 	 * @return Timing
 	 */
 	public function getTiming();
+
+	/**
+	 * Get a Message object with context set.  See wfMessage for parameters.
+	 *
+	 * @param mixed ...
+	 * @return Message
+	 */
+	public function msg();
 
 	/**
 	 * Export the resolved user IP, HTTP headers, user ID, and session ID.

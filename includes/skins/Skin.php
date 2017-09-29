@@ -20,8 +20,6 @@
  * @file
  */
 
-use MediaWiki\MediaWikiServices;
-
 /**
  * @defgroup Skins Skins
  */
@@ -95,7 +93,7 @@ abstract class Skin extends ContextSource {
 	static function normalizeKey( $key ) {
 		global $wgDefaultSkin, $wgFallbackSkin;
 
-		$skinNames = self::getSkinNames();
+		$skinNames = Skin::getSkinNames();
 
 		// Make keys lowercase for case-insensitive matching.
 		$skinNames = array_change_key_case( $skinNames, CASE_LOWER );
@@ -160,17 +158,8 @@ abstract class Skin extends ContextSource {
 		global $wgUseAjax, $wgEnableAPI, $wgEnableWriteAPI;
 
 		$out = $this->getOutput();
-		$config = $this->getConfig();
 		$user = $out->getUser();
 		$modules = [
-			// modules not specific to any specific skin or page
-			'core' => [
-				// Enforce various default modules for all pages and all skins
-				// Keep this list as small as possible
-				'site',
-				'mediawiki.page.startup',
-				'mediawiki.user',
-			],
 			// modules that enhance the page content in some way
 			'content' => [
 				'mediawiki.page.ready',
@@ -183,11 +172,6 @@ abstract class Skin extends ContextSource {
 			'user' => [],
 		];
 
-		// Support for high-density display images if enabled
-		if ( $config->get( 'ResponsiveImages' ) ) {
-			$modules['core'][] = 'mediawiki.hidpi';
-		}
-
 		// Preload jquery.tablesorter for mediawiki.page.ready
 		if ( strpos( $out->getHTML(), 'sortable' ) !== false ) {
 			$modules['content'][] = 'jquery.tablesorter';
@@ -196,10 +180,6 @@ abstract class Skin extends ContextSource {
 		// Preload jquery.makeCollapsible for mediawiki.page.ready
 		if ( strpos( $out->getHTML(), 'mw-collapsible' ) !== false ) {
 			$modules['content'][] = 'jquery.makeCollapsible';
-		}
-
-		if ( $out->isTOCEnabled() ) {
-			$modules['content'][] = 'mediawiki.toc';
 		}
 
 		// Add various resources if required
@@ -449,7 +429,7 @@ abstract class Skin extends ContextSource {
 	 * "<body>" tag, skins can override it if they have a need to add in any
 	 * body attributes or classes of their own.
 	 * @param OutputPage $out
-	 * @param array &$bodyAttrs
+	 * @param array $bodyAttrs
 	 */
 	function addToBodyAttributes( $out, &$bodyAttrs ) {
 		// does nothing by default
@@ -462,15 +442,6 @@ abstract class Skin extends ContextSource {
 	function getLogo() {
 		global $wgLogo;
 		return $wgLogo;
-	}
-
-	/**
-	 * Whether the logo should be preloaded with an HTTP link header or not
-	 * @since 1.29
-	 * @return bool
-	 */
-	public function shouldPreloadLogo() {
-		return false;
 	}
 
 	/**
@@ -1057,10 +1028,10 @@ abstract class Skin extends ContextSource {
 			$targetUser = User::newFromId( $id );
 		}
 
-		# The sending user must have a confirmed email address and the receiving
-		# user must accept emails from the sender.
-		return $this->getUser()->canSendEmail()
-			&& SpecialEmailUser::validateTarget( $targetUser, $this->getUser() ) === '';
+		# The sending user must have a confirmed email address and the target
+		# user must have a confirmed email address and allow emails from users.
+		return $this->getUser()->canSendEmail() &&
+			$targetUser->canReceiveEmail();
 	}
 
 	/**
@@ -1215,7 +1186,7 @@ abstract class Skin extends ContextSource {
 	/**
 	 * make sure we have some title to operate on
 	 *
-	 * @param Title &$title
+	 * @param Title $title
 	 * @param string $name
 	 */
 	static function checkTitle( &$title, $name ) {
@@ -1251,16 +1222,17 @@ abstract class Skin extends ContextSource {
 	function buildSidebar() {
 		global $wgEnableSidebarCache, $wgSidebarCacheExpiry;
 
-		$callback = function () {
+		$that = $this;
+		$callback = function () use ( $that ) {
 			$bar = [];
-			$this->addToSidebar( $bar, 'sidebar' );
-			Hooks::run( 'SkinBuildSidebar', [ $this, &$bar ] );
+			$that->addToSidebar( $bar, 'sidebar' );
+			Hooks::run( 'SkinBuildSidebar', [ $that, &$bar ] );
 
 			return $bar;
 		};
 
 		if ( $wgEnableSidebarCache ) {
-			$cache = MediaWikiServices::getInstance()->getMainWANObjectCache();
+			$cache = ObjectCache::getMainWANInstance();
 			$sidebar = $cache->getWithSetCallback(
 				$cache->makeKey( 'sidebar', $this->getLanguage()->getCode() ),
 				MessageCache::singleton()->isDisabled()
@@ -1285,7 +1257,7 @@ abstract class Skin extends ContextSource {
 	 *
 	 * This is just a wrapper around addToSidebarPlain() for backwards compatibility
 	 *
-	 * @param array &$bar
+	 * @param array $bar
 	 * @param string $message
 	 */
 	public function addToSidebar( &$bar, $message ) {
@@ -1295,7 +1267,7 @@ abstract class Skin extends ContextSource {
 	/**
 	 * Add content from plain text
 	 * @since 1.17
-	 * @param array &$bar
+	 * @param array $bar
 	 * @param string $text
 	 * @return array
 	 */
@@ -1374,8 +1346,8 @@ abstract class Skin extends ContextSource {
 					$bar[$heading][] = array_merge( [
 						'text' => $text,
 						'href' => $href,
-						'id' => Sanitizer::escapeIdForAttribute( 'n-' . strtr( $line[1], ' ', '-' ) ),
-						'active' => false,
+						'id' => 'n-' . Sanitizer::escapeId( strtr( $line[1], ' ', '-' ), 'noninitial' ),
+						'active' => false
 					], $extraAttribs );
 				} else {
 					continue;
@@ -1392,6 +1364,7 @@ abstract class Skin extends ContextSource {
 	 * @return string
 	 */
 	function getNewtalks() {
+
 		$newMessagesAlert = '';
 		$user = $this->getUser();
 		$newtalks = $user->getNewMessageLinks();
@@ -1485,7 +1458,7 @@ abstract class Skin extends ContextSource {
 	 *   should fall back to the next notice in its sequence
 	 */
 	private function getCachedNotice( $name ) {
-		global $wgRenderHashAppend, $wgContLang;
+		global $wgRenderHashAppend, $parserMemc, $wgContLang;
 
 		$needParse = false;
 
@@ -1506,27 +1479,28 @@ abstract class Skin extends ContextSource {
 			$notice = $msg->plain();
 		}
 
-		$cache = MediaWikiServices::getInstance()->getMainWANObjectCache();
-		$parsed = $cache->getWithSetCallback(
-			// Use the extra hash appender to let eg SSL variants separately cache
-			// Key is verified with md5 hash of unparsed wikitext
-			$cache->makeKey( $name, $wgRenderHashAppend, md5( $notice ) ),
-			// TTL in seconds
-			600,
-			function () use ( $notice ) {
-				return $this->getOutput()->parse( $notice );
+		// Use the extra hash appender to let eg SSL variants separately cache.
+		$key = wfMemcKey( $name . $wgRenderHashAppend );
+		$cachedNotice = $parserMemc->get( $key );
+		if ( is_array( $cachedNotice ) ) {
+			if ( md5( $notice ) == $cachedNotice['hash'] ) {
+				$notice = $cachedNotice['html'];
+			} else {
+				$needParse = true;
 			}
-		);
+		} else {
+			$needParse = true;
+		}
 
-		return Html::rawElement(
-			'div',
-			[
-				'id' => 'localNotice',
-				'lang' => $wgContLang->getHtmlCode(),
-				'dir' => $wgContLang->getDir()
-			],
-			$parsed
-		);
+		if ( $needParse ) {
+			$parsed = $this->getOutput()->parse( $notice );
+			$parserMemc->set( $key, [ 'html' => $parsed, 'hash' => md5( $notice ) ], 600 );
+			$notice = $parsed;
+		}
+
+		$notice = Html::rawElement( 'div', [ 'id' => 'localNotice',
+			'lang' => $wgContLang->getHtmlCode(), 'dir' => $wgContLang->getDir() ], $notice );
+		return $notice;
 	}
 
 	/**
@@ -1578,6 +1552,8 @@ abstract class Skin extends ContextSource {
 
 		$attribs = [];
 		if ( !is_null( $tooltip ) ) {
+			# T27462: undo double-escaping.
+			$tooltip = Sanitizer::decodeCharReferences( $tooltip );
 			$attribs['title'] = wfMessage( 'editsectionhint' )->rawParams( $tooltip )
 				->inLanguage( $lang )->text();
 		}
@@ -1609,7 +1585,7 @@ abstract class Skin extends ContextSource {
 
 		$result .= implode(
 			'<span class="mw-editsection-divider">'
-				. wfMessage( 'pipe-separator' )->inLanguage( $lang )->escaped()
+				. wfMessage( 'pipe-separator' )->inLanguage( $lang )->text()
 				. '</span>',
 			$linksHtml
 		);

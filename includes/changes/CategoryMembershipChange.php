@@ -134,8 +134,7 @@ class CategoryMembershipChange {
 			),
 			$this->pageTitle,
 			$this->getPreviousRevisionTimestamp(),
-			$this->revision,
-			$type === self::CATEGORY_ADDITION
+			$this->revision
 		);
 	}
 
@@ -147,7 +146,6 @@ class CategoryMembershipChange {
 	 * @param Title $pageTitle Title of the page that is being added or removed
 	 * @param string $lastTimestamp Parent revision timestamp of this change in TS_MW format
 	 * @param Revision|null $revision
-	 * @param bool $added true, if the category was added, false for removed
 	 *
 	 * @throws MWException
 	 */
@@ -158,8 +156,7 @@ class CategoryMembershipChange {
 		$comment,
 		Title $pageTitle,
 		$lastTimestamp,
-		$revision,
-		$added
+		$revision
 	) {
 		$deleted = $revision ? $revision->getVisibility() & Revision::SUPPRESSED_USER : 0;
 		$newRevId = $revision ? $revision->getId() : 0;
@@ -200,8 +197,7 @@ class CategoryMembershipChange {
 				$lastTimestamp,
 				$bot,
 				$ip,
-				$deleted,
-				$added
+				$deleted
 			]
 		);
 		$rc->save();

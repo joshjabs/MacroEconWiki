@@ -22,7 +22,6 @@
 
 /**
  * @group Database
- * @covers UserPasswordPolicy
  */
 class UserPasswordPolicyTest extends MediaWikiTestCase {
 
@@ -57,7 +56,11 @@ class UserPasswordPolicyTest extends MediaWikiTestCase {
 		return new UserPasswordPolicy( $this->policies, $this->checks );
 	}
 
+	/**
+	 * @covers UserPasswordPolicy::getPoliciesForUser
+	 */
 	public function testGetPoliciesForUser() {
+
 		$upp = $this->getUserPasswordPolicy();
 
 		$user = User::newFromName( 'TestUserPolicy' );
@@ -76,6 +79,9 @@ class UserPasswordPolicyTest extends MediaWikiTestCase {
 		);
 	}
 
+	/**
+	 * @covers UserPasswordPolicy::getPoliciesForGroups
+	 */
 	public function testGetPoliciesForGroups() {
 		$effective = UserPasswordPolicy::getPoliciesForGroups(
 			$this->policies,
@@ -97,8 +103,10 @@ class UserPasswordPolicyTest extends MediaWikiTestCase {
 
 	/**
 	 * @dataProvider provideCheckUserPassword
+	 * @covers UserPasswordPolicy::checkUserPassword
 	 */
 	public function testCheckUserPassword( $username, $groups, $password, $valid, $ok, $msg ) {
+
 		$upp = $this->getUserPasswordPolicy();
 
 		$user = User::newFromName( $username );
@@ -175,6 +183,7 @@ class UserPasswordPolicyTest extends MediaWikiTestCase {
 
 	/**
 	 * @dataProvider provideMaxOfPolicies
+	 * @covers UserPasswordPolicy::maxOfPolicies
 	 */
 	public function testMaxOfPolicies( $p1, $p2, $max, $msg ) {
 		$this->assertArrayEquals(

@@ -17,8 +17,6 @@ class WikiPageTest extends MediaWikiLangTestCase {
 			$this->tablesUsed,
 			[ 'page',
 				'revision',
-				'archive',
-				'ip_changes',
 				'text',
 
 				'recentchanges',
@@ -119,7 +117,7 @@ class WikiPageTest extends MediaWikiLangTestCase {
 		$id = $page->getId();
 
 		# ------------------------
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'pagelinks', '*', [ 'pl_from' => $id ] );
 		$n = $res->numRows();
 		$res->free();
@@ -149,7 +147,7 @@ class WikiPageTest extends MediaWikiLangTestCase {
 		$this->assertTrue( $content->equals( $retrieved ), 'retrieved content doesn\'t equal original' );
 
 		# ------------------------
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'pagelinks', '*', [ 'pl_from' => $id ] );
 		$n = $res->numRows();
 		$res->free();
@@ -197,7 +195,7 @@ class WikiPageTest extends MediaWikiLangTestCase {
 		$jobs->execute();
 
 		# ------------------------
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'pagelinks', '*', [ 'pl_from' => $id ] );
 		$n = $res->numRows();
 		$res->free();
@@ -227,7 +225,7 @@ class WikiPageTest extends MediaWikiLangTestCase {
 		$jobs->execute();
 
 		# ------------------------
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'pagelinks', '*', [ 'pl_from' => $id ] );
 		$n = $res->numRows();
 		$res->free();
@@ -551,11 +549,7 @@ class WikiPageTest extends MediaWikiLangTestCase {
 
 	public static function provideGetParserOutput() {
 		return [
-			[
-				CONTENT_MODEL_WIKITEXT,
-				"hello ''world''\n",
-				"<div class=\"mw-parser-output\"><p>hello <i>world</i></p></div>"
-			],
+			[ CONTENT_MODEL_WIKITEXT, "hello ''world''\n", "<p>hello <i>world</i></p>" ],
 			// @todo more...?
 		];
 	}
@@ -572,7 +566,7 @@ class WikiPageTest extends MediaWikiLangTestCase {
 		$text = $po->getText();
 
 		$text = trim( preg_replace( '/<!--.*?-->/sm', '', $text ) ); # strip injected comments
-		$text = preg_replace( '!\s*(</p>|</div>)!sm', '\1', $text ); # don't let tidy confuse us
+		$text = preg_replace( '!\s*(</p>)!sm', '\1', $text ); # don't let tidy confuse us
 
 		$this->assertEquals( $expectedHtml, $text );
 
@@ -627,15 +621,15 @@ more stuff
 		return [
 			[ 'Help:WikiPageTest_testReplaceSection',
 				CONTENT_MODEL_WIKITEXT,
-				self::$sections,
+				WikiPageTest::$sections,
 				"0",
 				"No more",
 				null,
-				trim( preg_replace( '/^Intro/sm', 'No more', self::$sections ) )
+				trim( preg_replace( '/^Intro/sm', 'No more', WikiPageTest::$sections ) )
 			],
 			[ 'Help:WikiPageTest_testReplaceSection',
 				CONTENT_MODEL_WIKITEXT,
-				self::$sections,
+				WikiPageTest::$sections,
 				"",
 				"No more",
 				null,
@@ -643,29 +637,29 @@ more stuff
 			],
 			[ 'Help:WikiPageTest_testReplaceSection',
 				CONTENT_MODEL_WIKITEXT,
-				self::$sections,
+				WikiPageTest::$sections,
 				"2",
 				"== TEST ==\nmore fun",
 				null,
 				trim( preg_replace( '/^== test ==.*== foo ==/sm',
 					"== TEST ==\nmore fun\n\n== foo ==",
-					self::$sections ) )
+					WikiPageTest::$sections ) )
 			],
 			[ 'Help:WikiPageTest_testReplaceSection',
 				CONTENT_MODEL_WIKITEXT,
-				self::$sections,
+				WikiPageTest::$sections,
 				"8",
 				"No more",
 				null,
-				trim( self::$sections )
+				trim( WikiPageTest::$sections )
 			],
 			[ 'Help:WikiPageTest_testReplaceSection',
 				CONTENT_MODEL_WIKITEXT,
-				self::$sections,
+				WikiPageTest::$sections,
 				"new",
 				"No more",
 				"New",
-				trim( self::$sections ) . "\n\n== New ==\n\nNo more"
+				trim( WikiPageTest::$sections ) . "\n\n== New ==\n\nNo more"
 			],
 		];
 	}
@@ -829,7 +823,7 @@ more stuff
 		# we are having issues with doRollback spuriously failing. Apparently
 		# the last revision somehow goes missing or not committed under some
 		# circumstances. So, make sure the last revision has the right user name.
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = wfGetDB( DB_SLAVE );
 		$this->assertEquals( 3, Revision::countByPageId( $dbr, $page->getId() ) );
 
 		$page = new WikiPage( $page->getTitle() );
@@ -1125,84 +1119,4 @@ more stuff
 		$page = WikiPage::factory( $title );
 		$this->assertEquals( 'WikiPage', get_class( $page ) );
 	}
-
-	/**
-	 * @dataProvider provideCommentMigrationOnDeletion
-	 * @param int $wstage
-	 * @param int $rstage
-	 */
-	public function testCommentMigrationOnDeletion( $wstage, $rstage ) {
-		$this->setMwGlobals( 'wgCommentTableSchemaMigrationStage', $wstage );
-		$dbr = wfGetDB( DB_REPLICA );
-
-		$page = $this->createPage(
-			"WikiPageTest_testCommentMigrationOnDeletion",
-			"foo",
-			CONTENT_MODEL_WIKITEXT
-		);
-		$revid = $page->getLatest();
-		if ( $wstage > MIGRATION_OLD ) {
-			$comment_id = $dbr->selectField(
-				'revision_comment_temp',
-				'revcomment_comment_id',
-				[ 'revcomment_rev' => $revid ],
-				__METHOD__
-			);
-		}
-
-		$this->setMwGlobals( 'wgCommentTableSchemaMigrationStage', $rstage );
-
-		$page->doDeleteArticle( "testing deletion" );
-
-		if ( $rstage > MIGRATION_OLD ) {
-			// Didn't leave behind any 'revision_comment_temp' rows
-			$n = $dbr->selectField(
-				'revision_comment_temp', 'COUNT(*)', [ 'revcomment_rev' => $revid ], __METHOD__
-			);
-			$this->assertEquals( 0, $n, 'no entry in revision_comment_temp after deletion' );
-
-			// Copied or upgraded the comment_id, as applicable
-			$ar_comment_id = $dbr->selectField(
-				'archive',
-				'ar_comment_id',
-				[ 'ar_rev_id' => $revid ],
-				__METHOD__
-			);
-			if ( $wstage > MIGRATION_OLD ) {
-				$this->assertSame( $comment_id, $ar_comment_id );
-			} else {
-				$this->assertNotEquals( 0, $ar_comment_id );
-			}
-		}
-
-		// Copied rev_comment, if applicable
-		if ( $rstage <= MIGRATION_WRITE_BOTH && $wstage <= MIGRATION_WRITE_BOTH ) {
-			$ar_comment = $dbr->selectField(
-				'archive',
-				'ar_comment',
-				[ 'ar_rev_id' => $revid ],
-				__METHOD__
-			);
-			$this->assertSame( 'testing', $ar_comment );
-		}
-	}
-
-	public static function provideCommentMigrationOnDeletion() {
-		return [
-			[ MIGRATION_OLD, MIGRATION_OLD ],
-			[ MIGRATION_OLD, MIGRATION_WRITE_BOTH ],
-			[ MIGRATION_OLD, MIGRATION_WRITE_NEW ],
-			[ MIGRATION_WRITE_BOTH, MIGRATION_OLD ],
-			[ MIGRATION_WRITE_BOTH, MIGRATION_WRITE_BOTH ],
-			[ MIGRATION_WRITE_BOTH, MIGRATION_WRITE_NEW ],
-			[ MIGRATION_WRITE_BOTH, MIGRATION_NEW ],
-			[ MIGRATION_WRITE_NEW, MIGRATION_WRITE_BOTH ],
-			[ MIGRATION_WRITE_NEW, MIGRATION_WRITE_NEW ],
-			[ MIGRATION_WRITE_NEW, MIGRATION_NEW ],
-			[ MIGRATION_NEW, MIGRATION_WRITE_BOTH ],
-			[ MIGRATION_NEW, MIGRATION_WRITE_NEW ],
-			[ MIGRATION_NEW, MIGRATION_NEW ],
-		];
-	}
-
 }

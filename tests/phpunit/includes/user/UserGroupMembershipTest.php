@@ -50,7 +50,8 @@ class UserGroupMembershipTest extends MediaWikiTestCase {
 	 * @covers UserGroupMembership::delete
 	 */
 	public function testAddAndRemoveGroups() {
-		$user = $this->getMutableTestUser()->getUser();
+		$user = new User;
+		$user->addToDatabase();
 
 		// basic tests
 		$ugm = new UserGroupMembership( $user->getId(), 'unittesters' );

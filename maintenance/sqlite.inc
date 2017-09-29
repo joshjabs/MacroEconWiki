@@ -48,7 +48,7 @@ class Sqlite {
 	 * @return bool True if no error or error string in case of errors
 	 */
 	public static function checkSqlSyntax( $files ) {
-		if ( !self::isPresent() ) {
+		if ( !Sqlite::isPresent() ) {
 			throw new MWException( "Can't check SQL syntax: SQLite not found" );
 		}
 		if ( !is_array( $files ) ) {

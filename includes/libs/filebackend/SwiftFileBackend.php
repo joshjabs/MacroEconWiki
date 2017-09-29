@@ -20,6 +20,7 @@
  * @file
  * @ingroup FileBackend
  * @author Russ Nelson
+ * @author Aaron Schulz
  */
 
 /**
@@ -34,26 +35,27 @@
 class SwiftFileBackend extends FileBackendStore {
 	/** @var MultiHttpClient */
 	protected $http;
+
 	/** @var int TTL in seconds */
 	protected $authTTL;
+
 	/** @var string Authentication base URL (without version) */
 	protected $swiftAuthUrl;
-	/** @var string Override of storage base URL */
-	protected $swiftStorageUrl;
+
 	/** @var string Swift user (account:user) to authenticate as */
 	protected $swiftUser;
+
 	/** @var string Secret key for user */
 	protected $swiftKey;
+
 	/** @var string Shared secret value for making temp URLs */
 	protected $swiftTempUrlKey;
+
 	/** @var string S3 access key (RADOS Gateway) */
 	protected $rgwS3AccessKey;
+
 	/** @var string S3 authentication key (RADOS Gateway) */
 	protected $rgwS3SecretKey;
-	/** @var array Additional users (account:user) to open read permissions for */
-	protected $readUsers;
-	/** @var array Additional users (account:user) to open write permissions for */
-	protected $writeUsers;
 
 	/** @var BagOStuff */
 	protected $srvCache;
@@ -63,8 +65,10 @@ class SwiftFileBackend extends FileBackendStore {
 
 	/** @var array */
 	protected $authCreds;
+
 	/** @var int UNIX timestamp */
 	protected $authSessionTimestamp = 0;
+
 	/** @var int UNIX timestamp */
 	protected $authErrorTimestamp = null;
 
@@ -73,15 +77,13 @@ class SwiftFileBackend extends FileBackendStore {
 
 	/**
 	 * @see FileBackendStore::__construct()
-	 * @param array $config Params include:
+	 * Additional $config params include:
 	 *   - swiftAuthUrl       : Swift authentication server URL
 	 *   - swiftUser          : Swift user used by MediaWiki (account:username)
 	 *   - swiftKey           : Swift authentication key for the above user
 	 *   - swiftAuthTTL       : Swift authentication TTL (seconds)
 	 *   - swiftTempUrlKey    : Swift "X-Account-Meta-Temp-URL-Key" value on the account.
 	 *                          Do not set this until it has been set in the backend.
-	 *   - swiftStorageUrl    : Swift storage URL (overrides that of the authentication response).
-	 *                          This is useful to set if a TLS proxy is in use.
 	 *   - shardViaHashLevels : Map of container names to sharding config with:
 	 *                             - base   : base of hash characters, 16 or 36
 	 *                             - levels : the number of hash levels (and digits)
@@ -100,8 +102,6 @@ class SwiftFileBackend extends FileBackendStore {
 	 *                          This is used for generating expiring pre-authenticated URLs.
 	 *                          Only use this when using rgw and to work around
 	 *                          http://tracker.newdream.net/issues/3454.
-	 *   - readUsers           : Swift users that should have read access (account:username)
-	 *   - writeUsers          : Swift users that should have write access (account:username)
 	 */
 	public function __construct( array $config ) {
 		parent::__construct( $config );
@@ -116,9 +116,6 @@ class SwiftFileBackend extends FileBackendStore {
 		$this->swiftTempUrlKey = isset( $config['swiftTempUrlKey'] )
 			? $config['swiftTempUrlKey']
 			: '';
-		$this->swiftStorageUrl = isset( $config['swiftStorageUrl'] )
-			? $config['swiftStorageUrl']
-			: null;
 		$this->shardViaHashLevels = isset( $config['shardViaHashLevels'] )
 			? $config['shardViaHashLevels']
 			: '';
@@ -142,12 +139,6 @@ class SwiftFileBackend extends FileBackendStore {
 		} else {
 			$this->srvCache = new EmptyBagOStuff();
 		}
-		$this->readUsers = isset( $config['readUsers'] )
-			? $config['readUsers']
-			: [];
-		$this->writeUsers = isset( $config['writeUsers'] )
-			? $config['writeUsers']
-			: [];
 	}
 
 	public function getFeatures() {
@@ -602,13 +593,11 @@ class SwiftFileBackend extends FileBackendStore {
 
 		$stat = $this->getContainerStat( $fullCont );
 		if ( is_array( $stat ) ) {
-			$readUsers = array_merge( $this->readUsers, [ $this->swiftUser ] );
-			$writeUsers = array_merge( $this->writeUsers, [ $this->swiftUser ] );
 			// Make container private to end-users...
 			$status->merge( $this->setContainerAccess(
 				$fullCont,
-				$readUsers,
-				$writeUsers
+				[ $this->swiftUser ], // read
+				[ $this->swiftUser ] // write
 			) );
 		} elseif ( $stat === false ) {
 			$status->fatal( 'backend-fail-usable', $params['dir'] );
@@ -625,14 +614,11 @@ class SwiftFileBackend extends FileBackendStore {
 
 		$stat = $this->getContainerStat( $fullCont );
 		if ( is_array( $stat ) ) {
-			$readUsers = array_merge( $this->readUsers, [ $this->swiftUser, '.r:*' ] );
-			$writeUsers = array_merge( $this->writeUsers, [ $this->swiftUser ] );
-
 			// Make container public to end-users...
 			$status->merge( $this->setContainerAccess(
 				$fullCont,
-				$readUsers,
-				$writeUsers
+				[ $this->swiftUser, '.r:*' ], // read
+				[ $this->swiftUser ] // write
 			) );
 		} elseif ( $stat === false ) {
 			$status->fatal( 'backend-fail-usable', $params['dir'] );
@@ -845,7 +831,7 @@ class SwiftFileBackend extends FileBackendStore {
 	 *
 	 * @param string $fullCont Resolved container name
 	 * @param string $dir Resolved storage directory with no trailing slash
-	 * @param string|null &$after Resolved container relative path to list items after
+	 * @param string|null $after Resolved container relative path to list items after
 	 * @param int $limit Max number of items to list
 	 * @param array $params Parameters for getDirectoryList()
 	 * @return array List of container relative resolved paths of directories directly under $dir
@@ -925,7 +911,7 @@ class SwiftFileBackend extends FileBackendStore {
 	 *
 	 * @param string $fullCont Resolved container name
 	 * @param string $dir Resolved storage directory with no trailing slash
-	 * @param string|null &$after Resolved container relative path of file to list items after
+	 * @param string|null $after Resolved container relative path of file to list items after
 	 * @param int $limit Max number of items to list
 	 * @param array $params Parameters for getDirectoryList()
 	 * @return array List of resolved container relative paths of files under $dir
@@ -1267,7 +1253,7 @@ class SwiftFileBackend extends FileBackendStore {
 	 * @return StatusValue[]
 	 */
 	protected function doExecuteOpHandlesInternal( array $fileOpHandles ) {
-		/** @var StatusValue[] $statuses */
+		/** @var $statuses StatusValue[] */
 		$statuses = [];
 
 		$auth = $this->getAuthentication();
@@ -1326,7 +1312,7 @@ class SwiftFileBackend extends FileBackendStore {
 	 * (lists are truncated to 10000 item with no way to page), and is just a performance risk.
 	 *
 	 * @param string $container Resolved Swift container
-	 * @param array $readUsers List of the possible criteria for a request to have
+	 * @param array $readGrps List of the possible criteria for a request to have
 	 * access to read a container. Each item is one of the following formats:
 	 *   - account:user        : Grants access if the request is by the given user
 	 *   - ".r:<regex>"        : Grants access if the request is from a referrer host that
@@ -1334,12 +1320,12 @@ class SwiftFileBackend extends FileBackendStore {
 	 *                           Setting this to '*' effectively makes a container public.
 	 *   -".rlistings:<regex>" : Grants access if the request is from a referrer host that
 	 *                           matches the expression and the request is for a listing.
-	 * @param array $writeUsers A list of the possible criteria for a request to have
+	 * @param array $writeGrps A list of the possible criteria for a request to have
 	 * access to write to a container. Each item is of the following format:
 	 *   - account:user       : Grants access if the request is by the given user
 	 * @return StatusValue
 	 */
-	protected function setContainerAccess( $container, array $readUsers, array $writeUsers ) {
+	protected function setContainerAccess( $container, array $readGrps, array $writeGrps ) {
 		$status = $this->newStatus();
 		$auth = $this->getAuthentication();
 
@@ -1353,8 +1339,8 @@ class SwiftFileBackend extends FileBackendStore {
 			'method' => 'POST',
 			'url' => $this->storageUrl( $auth, $container ),
 			'headers' => $this->authTokenHeaders( $auth ) + [
-				'x-container-read' => implode( ',', $readUsers ),
-				'x-container-write' => implode( ',', $writeUsers )
+				'x-container-read' => implode( ',', $readGrps ),
+				'x-container-write' => implode( ',', $writeGrps )
 			]
 		] );
 
@@ -1437,19 +1423,18 @@ class SwiftFileBackend extends FileBackendStore {
 
 		// @see SwiftFileBackend::setContainerAccess()
 		if ( empty( $params['noAccess'] ) ) {
-			$readUsers = array_merge( $this->readUsers, [ '.r:*', $this->swiftUser ] ); // public
+			$readGrps = [ '.r:*', $this->swiftUser ]; // public
 		} else {
-			$readUsers = array_merge( $this->readUsers, [ $this->swiftUser ] ); // private
+			$readGrps = [ $this->swiftUser ]; // private
 		}
-
-		$writeUsers = array_merge( $this->writeUsers, [ $this->swiftUser ] ); // sanity
+		$writeGrps = [ $this->swiftUser ]; // sanity
 
 		list( $rcode, $rdesc, $rhdrs, $rbody, $rerr ) = $this->http->run( [
 			'method' => 'PUT',
 			'url' => $this->storageUrl( $auth, $container ),
 			'headers' => $this->authTokenHeaders( $auth ) + [
-				'x-container-read' => implode( ',', $readUsers ),
-				'x-container-write' => implode( ',', $writeUsers )
+				'x-container-read' => implode( ',', $readGrps ),
+				'x-container-write' => implode( ',', $writeGrps )
 			]
 		] );
 
@@ -1689,11 +1674,8 @@ class SwiftFileBackend extends FileBackendStore {
 				if ( $rcode >= 200 && $rcode <= 299 ) { // OK
 					$this->authCreds = [
 						'auth_token' => $rhdrs['x-auth-token'],
-						'storage_url' => ( $this->swiftStorageUrl !== null )
-							? $this->swiftStorageUrl
-							: $rhdrs['x-storage-url']
+						'storage_url' => $rhdrs['x-storage-url']
 					];
-
 					$this->srvCache->set( $cacheKey, $this->authCreds, ceil( $this->authTTL / 2 ) );
 					$this->authSessionTimestamp = time();
 				} elseif ( $rcode === 401 ) {
@@ -1906,7 +1888,7 @@ abstract class SwiftFileBackendList implements Iterator {
 	 *
 	 * @param string $container Resolved container name
 	 * @param string $dir Resolved path relative to container
-	 * @param string &$after
+	 * @param string $after
 	 * @param int $limit
 	 * @param array $params
 	 * @return Traversable|array

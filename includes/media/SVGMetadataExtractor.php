@@ -58,6 +58,8 @@ class SVGReader {
 	private $languagePrefixes = [];
 
 	/**
+	 * Constructor
+	 *
 	 * Creates an SVGReader drawing from the source provided
 	 * @param string $source URI from which to read
 	 * @throws MWException|Exception

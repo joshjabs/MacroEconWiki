@@ -8,7 +8,7 @@ use Liuggio\StatsdClient\Factory\StatsdDataFactoryInterface;
  * @author Addshore
  * @since 1.27
  */
-class NullStatsdDataFactory implements IBufferingStatsdDataFactory {
+class NullStatsdDataFactory implements StatsdDataFactoryInterface {
 
 	/**
 	 * This function creates a 'timing' StatsdData.
@@ -40,8 +40,8 @@ class NullStatsdDataFactory implements IBufferingStatsdDataFactory {
 	 * and logged in users by sending the current userId of a user
 	 * with each request with a key of "uniques" (or similar).
 	 *
-	 * @param string|array $key The metric(s) to set.
-	 * @param float $value The value for the stats.
+	 * @param  string|array $key The metric(s) to set.
+	 * @param  float $value The value for the stats.
 	 *
 	 * @return array
 	 */
@@ -53,6 +53,7 @@ class NullStatsdDataFactory implements IBufferingStatsdDataFactory {
 	 * This function creates a 'increment' StatsdData object.
 	 *
 	 * @param string|array $key The metric(s) to increment.
+	 * @param float|1      $sampleRate The rate (0-1) for sampling.
 	 *
 	 * @return array
 	 */
@@ -65,6 +66,7 @@ class NullStatsdDataFactory implements IBufferingStatsdDataFactory {
 	 *
 	 *
 	 * @param string|array $key The metric(s) to decrement.
+	 * @param float|1      $sampleRate The rate (0-1) for sampling.
 	 *
 	 * @return mixed
 	 */
@@ -76,7 +78,7 @@ class NullStatsdDataFactory implements IBufferingStatsdDataFactory {
 	 * This function creates a 'updateCount' StatsdData object.
 	 *
 	 * @param string|array $key The metric(s) to decrement.
-	 * @param int $delta The delta to add to the each metric
+	 * @param integer $delta The delta to add to the each metric
 	 *
 	 * @return mixed
 	 */
@@ -106,28 +108,4 @@ class NullStatsdDataFactory implements IBufferingStatsdDataFactory {
 		return $data;
 	}
 
-	/**
-	 * Check whether this data factory has any data.
-	 * @return bool
-	 */
-	public function hasData() {
-		return false;
-	}
-
-	/**
-	 * Return data from the factory.
-	 * @return StatsdData[]
-	 */
-	public function getData() {
-		return [];
-	}
-
-	/**
-	 * Set collection enable status.
-	 * @param bool $enabled Will collection be enabled?
-	 * @return void
-	 */
-	public function setEnabled( $enabled ) {
-		// Nothing to do, null factory is always disabled.
-	}
 }

@@ -1,7 +1,5 @@
 <?php
 
-use MediaWiki\MediaWikiServices;
-
 /**
  * @group GlobalFunctions
  * @covers ::wfThumbIsStandard
@@ -94,11 +92,10 @@ class WfThumbIsStandardTest extends MediaWikiTestCase {
 	 * @dataProvider provideThumbParams
 	 */
 	public function testIsStandard( $message, $expected, $params ) {
-		$handlers = MediaWikiServices::getInstance()->getMainConfig()->get( 'ParserTestMediaHandlers' );
-		$this->setService( 'MediaHandlerFactory', new MediaHandlerFactory( $handlers ) );
+		$this->setService( 'MediaHandlerFactory', new MockMediaHandlerFactory() );
 		$this->assertSame(
 			$expected,
-			wfThumbIsStandard( new FakeDimensionFile( [ 2000, 1800 ], 'image/jpeg' ), $params ),
+			wfThumbIsStandard( new FakeDimensionFile( [ 2000, 1800 ] ), $params ),
 			$message
 		);
 	}

@@ -22,7 +22,7 @@
  * @since 1.16.3
  */
 class IcuCollation extends Collation {
-	const FIRST_LETTER_VERSION = 3;
+	const FIRST_LETTER_VERSION = 2;
 
 	/** @var Collator */
 	private $primaryCollator;
@@ -36,7 +36,7 @@ class IcuCollation extends Collation {
 	/** @var Language */
 	protected $digitTransformLanguage;
 
-	/** @var bool */
+	/** @var boolean */
 	private $useNumericCollation = false;
 
 	/** @var array */
@@ -180,7 +180,7 @@ class IcuCollation extends Collation {
 		'mk' => [ "Ѓ", "Ќ" ],
 		'ml' => [],
 		'mn' => [],
-		'mo' => [ "Ă", "Â", "Î", "Ș", "Ț" ], // not in libicu
+		'mo' => [ "Ă", "Â", "Î", "Ş", "Ţ" ], // not in libicu
 		'mr' => [ "\xe0\xa4\x82", "\xe0\xa4\x83", "ळ", "क्ष", "ज्ञ" ],
 		'ms' => [],
 		'mt' => [ "Ċ", "Ġ", "Għ", "Ħ", "Ż" ],
@@ -196,9 +196,9 @@ class IcuCollation extends Collation {
 		'pl' => [ "Ą", "Ć", "Ę", "Ł", "Ń", "Ó", "Ś", "Ź", "Ż" ],
 		'pt' => [],
 		'rm' => [], // not in libicu
-		'ro' => [ "Ă", "Â", "Î", "Ș", "Ț" ],
+		'ro' => [ "Ă", "Â", "Î", "Ş", "Ţ" ],
 		'ru' => [],
-		'rup' => [ "Ă", "Â", "Î", "Ľ", "Ń", "Ș", "Ț" ], // not in libicu
+		'rup' => [ "Ă", "Â", "Î", "Ľ", "Ń", "Ş", "Ţ" ], // not in libicu
 		'sco' => [],
 		'se' => [
 			'Á', 'Č', 'Ʒ', 'Ǯ', 'Đ', 'Ǧ', 'Ǥ', 'Ǩ', 'Ŋ',
@@ -474,8 +474,6 @@ class IcuCollation extends Collation {
 	}
 
 	/**
-	 * @param string $index
-	 * @return string
 	 * @since 1.16.3
 	 */
 	public function getLetterByIndex( $index ) {
@@ -483,8 +481,6 @@ class IcuCollation extends Collation {
 	}
 
 	/**
-	 * @param string $index
-	 * @return string
 	 * @since 1.16.3
 	 */
 	public function getSortKeyByLetterIndex( $index ) {
@@ -492,8 +488,6 @@ class IcuCollation extends Collation {
 	}
 
 	/**
-	 * @param string $index
-	 * @return string
 	 * @since 1.16.3
 	 */
 	public function getFirstLetterCount() {
@@ -502,8 +496,6 @@ class IcuCollation extends Collation {
 
 	/**
 	 * Test if a code point is a CJK (Chinese, Japanese, Korean) character
-	 * @param int $codepoint
-	 * @return bool
 	 * @since 1.16.3
 	 */
 	public static function isCjk( $codepoint ) {
@@ -543,7 +535,7 @@ class IcuCollation extends Collation {
 	 * @return string|bool
 	 */
 	static function getUnicodeVersionForICU() {
-		$icuVersion = self::getICUVersion();
+		$icuVersion = IcuCollation::getICUVersion();
 		if ( !$icuVersion ) {
 			return false;
 		}

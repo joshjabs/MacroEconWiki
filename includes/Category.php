@@ -40,19 +40,15 @@ class Category {
 	/** Counts of membership (cat_pages, cat_subcats, cat_files) */
 	private $mPages = null, $mSubcats = null, $mFiles = null;
 
-	const LOAD_ONLY = 0;
-	const LAZY_INIT_ROW = 1;
-
 	private function __construct() {
 	}
 
 	/**
 	 * Set up all member variables using a database query.
-	 * @param int $mode
 	 * @throws MWException
 	 * @return bool True on success, false on failure.
 	 */
-	protected function initialize( $mode = self::LOAD_ONLY ) {
+	protected function initialize() {
 		if ( $this->mName === null && $this->mID === null ) {
 			throw new MWException( __METHOD__ . ' has both names and IDs null' );
 		} elseif ( $this->mID === null ) {
@@ -84,7 +80,7 @@ class Category {
 				$this->mFiles = 0;
 
 				# If the title exists, call refreshCounts to add a row for it.
-				if ( $mode === self::LAZY_INIT_ROW && $this->mTitle->exists() ) {
+				if ( $this->mTitle->exists() ) {
 					DeferredUpdates::addCallableUpdate( [ $this, 'refreshCounts' ] );
 				}
 
@@ -108,9 +104,7 @@ class Category {
 			$this->mSubcats = max( $this->mSubcats, 0 );
 			$this->mFiles = max( $this->mFiles, 0 );
 
-			if ( $mode === self::LAZY_INIT_ROW ) {
-				DeferredUpdates::addCallableUpdate( [ $this, 'refreshCounts' ] );
-			}
+			DeferredUpdates::addCallableUpdate( [ $this, 'refreshCounts' ] );
 		}
 
 		return true;
@@ -253,7 +247,7 @@ class Category {
 			return $this->mTitle;
 		}
 
-		if ( !$this->initialize( self::LAZY_INIT_ROW ) ) {
+		if ( !$this->initialize() ) {
 			return false;
 		}
 
@@ -264,11 +258,12 @@ class Category {
 	/**
 	 * Fetch a TitleArray of up to $limit category members, beginning after the
 	 * category sort key $offset.
-	 * @param int|bool $limit
+	 * @param int $limit
 	 * @param string $offset
 	 * @return TitleArray TitleArray object for category members.
 	 */
 	public function getMembers( $limit = false, $offset = '' ) {
+
 		$dbr = wfGetDB( DB_REPLICA );
 
 		$conds = [ 'cl_to' => $this->getName(), 'cl_from = page_id' ];
@@ -302,7 +297,7 @@ class Category {
 	 * @return bool
 	 */
 	private function getX( $key ) {
-		if ( !$this->initialize( self::LAZY_INIT_ROW ) ) {
+		if ( !$this->initialize() ) {
 			return false;
 		}
 		return $this->{$key};
@@ -321,7 +316,7 @@ class Category {
 		# If we have just a category name, find out whether there is an
 		# existing row. Or if we have just an ID, get the name, because
 		# that's what categorylinks uses.
-		if ( !$this->initialize( self::LOAD_ONLY ) ) {
+		if ( !$this->initialize() ) {
 			return false;
 		}
 
@@ -330,7 +325,7 @@ class Category {
 		$name = __METHOD__ . ':' . md5( $this->mName );
 		$scopedLock = $dbw->getScopedLockAndFlush( $name, __METHOD__, 1 );
 		if ( !$scopedLock ) {
-			return false;
+			return;
 		}
 
 		$dbw->startAtomic( __METHOD__ );

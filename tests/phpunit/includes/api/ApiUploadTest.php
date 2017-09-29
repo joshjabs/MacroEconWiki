@@ -51,6 +51,7 @@ class ApiUploadTest extends ApiTestCaseUpload {
 		$this->assertArrayHasKey( "login", $result );
 		$this->assertArrayHasKey( "result", $result['login'] );
 		$this->assertEquals( "Success", $result['login']['result'] );
+		$this->assertArrayHasKey( 'lgtoken', $result['login'] );
 
 		$this->assertNotEmpty( $session, 'API Login must return a session' );
 
@@ -68,7 +69,7 @@ class ApiUploadTest extends ApiTestCaseUpload {
 			] );
 		} catch ( ApiUsageException $e ) {
 			$exception = true;
-			$this->assertContains( 'The "token" parameter must be set', $e->getMessage() );
+			$this->assertEquals( 'The "token" parameter must be set', $e->getMessage() );
 		}
 		$this->assertTrue( $exception, "Got exception" );
 	}
@@ -84,10 +85,8 @@ class ApiUploadTest extends ApiTestCaseUpload {
 			], $session, self::$users['uploader']->getUser() );
 		} catch ( ApiUsageException $e ) {
 			$exception = true;
-			$this->assertEquals(
-				'One of the parameters "filekey", "file" and "url" is required.',
-				$e->getMessage()
-			);
+			$this->assertEquals( "One of the parameters filekey, file, url is required",
+				$e->getMessage() );
 		}
 		$this->assertTrue( $exception, "Got exception" );
 	}

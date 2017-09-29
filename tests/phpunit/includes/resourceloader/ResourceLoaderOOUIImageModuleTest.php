@@ -39,7 +39,7 @@ class ResourceLoaderOOUIImageModuleTest extends ResourceLoaderTestCase {
 
 		$styles = $module->getStyles( $this->getResourceLoaderContext( [ 'skin' => 'fakemonobook' ] ) );
 		$this->assertRegExp(
-			'/stu-apex/',
+			'/magnifying-glass-apex/',
 			$styles['all'],
 			'Generated styles use the non-default image (embed)'
 		);
@@ -51,7 +51,7 @@ class ResourceLoaderOOUIImageModuleTest extends ResourceLoaderTestCase {
 
 		$styles = $module->getStyles( $this->getResourceLoaderContext() );
 		$this->assertRegExp(
-			'/stu-wikimediaui/',
+			'/magnifying-glass-mediawiki/',
 			$styles['all'],
 			'Generated styles use the default image (embed)'
 		);

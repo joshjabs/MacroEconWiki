@@ -72,7 +72,7 @@ class MWDocGen extends Maintenance {
 	}
 
 	protected function init() {
-		global $wgPhpCli, $IP;
+		global $IP;
 
 		$this->doxygen = $this->getOption( 'doxygen', 'doxygen' );
 		$this->mwVersion = $this->getOption( 'version', 'master' );
@@ -86,13 +86,7 @@ class MWDocGen extends Maintenance {
 
 		$this->output = $this->getOption( 'output', "$IP/docs" );
 
-		// Do not use wfShellWikiCmd, because mwdoc-filter.php is not
-		// a Maintenance script.
-		$this->inputFilter = wfEscapeShellArg( [
-			$wgPhpCli,
-			$IP . '/maintenance/mwdoc-filter.php'
-		] );
-
+		$this->inputFilter = wfShellWikiCmd( $IP . '/maintenance/mwdoc-filter.php' );
 		$this->template = $IP . '/maintenance/Doxyfile';
 		$this->excludes = [
 			'vendor',
@@ -105,7 +99,7 @@ class MWDocGen extends Maintenance {
 			$this->excludePatterns[] = 'extensions';
 		}
 
-		$this->doDot = shell_exec( 'which dot' );
+		$this->doDot = `which dot`;
 		$this->doMan = $this->hasOption( 'generate-man' );
 	}
 

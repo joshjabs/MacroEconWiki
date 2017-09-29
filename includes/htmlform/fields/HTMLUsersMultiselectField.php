@@ -15,16 +15,18 @@ use MediaWiki\Widget\UsersMultiselectWidget;
  * @note This widget is not likely to remain functional in non-OOUI forms.
  */
 class HTMLUsersMultiselectField extends HTMLUserTextField {
-	public function loadDataFromRequest( $request ) {
-		$value = $request->getText( $this->mName, $this->getDefault() );
 
-		$usersArray = explode( "\n", $value );
+	public function loadDataFromRequest( $request ) {
+		if ( !$request->getCheck( $this->mName ) ) {
+			return $this->getDefault();
+		}
+
+		$usersArray = explode( "\n", $request->getText( $this->mName ) );
 		// Remove empty lines
-		$usersArray = array_values( array_filter( $usersArray, function ( $username ) {
+		$usersArray = array_values( array_filter( $usersArray, function( $username ) {
 			return trim( $username ) !== '';
 		} ) );
-		// This function is expected to return a string
-		return implode( "\n", $usersArray );
+		return $usersArray;
 	}
 
 	public function validate( $value, $alldata ) {
@@ -36,9 +38,7 @@ class HTMLUsersMultiselectField extends HTMLUserTextField {
 			return false;
 		}
 
-		// $value is a string, because HTMLForm fields store their values as strings
-		$usersArray = explode( "\n", $value );
-		foreach ( $usersArray as $username ) {
+		foreach ( $value as $username ) {
 			$result = parent::validate( $username, $alldata );
 			if ( $result !== true ) {
 				return $result;
@@ -48,12 +48,12 @@ class HTMLUsersMultiselectField extends HTMLUserTextField {
 		return true;
 	}
 
-	public function getInputHTML( $value ) {
+	public function getInputHTML( $values ) {
 		$this->mParent->getOutput()->enableOOUI();
-		return $this->getInputOOUI( $value );
+		return $this->getInputOOUI( $values );
 	}
 
-	public function getInputOOUI( $value ) {
+	public function getInputOOUI( $values ) {
 		$params = [ 'name' => $this->mName ];
 
 		if ( isset( $this->mParams['default'] ) ) {
@@ -63,21 +63,16 @@ class HTMLUsersMultiselectField extends HTMLUserTextField {
 		if ( isset( $this->mParams['placeholder'] ) ) {
 			$params['placeholder'] = $this->mParams['placeholder'];
 		} else {
-			$params['placeholder'] = $this->msg( 'mw-widgets-usersmultiselect-placeholder' )->plain();
+			$params['placeholder'] = $this->msg( 'mw-widgets-usersmultiselect-placeholder' )
+							->inContentLanguage()
+							->plain();
 		}
 
-		if ( !is_null( $value ) ) {
-			// $value is a string, but the widget expects an array
-			$params['default'] = $value === '' ? [] : explode( "\n", $value );
+		if ( !is_null( $values ) ) {
+			$params['default'] = $values;
 		}
 
-		// Make the field auto-infusable when it's used inside a legacy HTMLForm rather than OOUIHTMLForm
-		$params['infusable'] = true;
-		$params['classes'] = [ 'mw-htmlform-field-autoinfuse' ];
-		$widget = new UsersMultiselectWidget( $params );
-		$widget->setAttributes( [ 'data-mw-modules' => implode( ',', $this->getOOUIModules() ) ] );
-
-		return $widget;
+		return new UsersMultiselectWidget( $params );
 	}
 
 	protected function shouldInfuseOOUI() {

@@ -466,7 +466,6 @@ $specialPageAliases = [
 	'Newimages'                 => [ 'NewFiles', 'NewImages' ],
 	'Newpages'                  => [ 'NewPages' ],
 	'PagesWithProp'             => [ 'PagesWithProp', 'Pageswithprop', 'PagesByProp', 'Pagesbyprop' ],
-	'PageData'                  => [ 'Pagedata' ],
 	'PageLanguage'              => [ 'PageLanguage' ],
 	'PasswordReset'             => [ 'PasswordReset' ],
 	'PermanentLink'             => [ 'PermanentLink', 'PermaLink' ],

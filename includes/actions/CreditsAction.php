@@ -44,6 +44,7 @@ class CreditsAction extends FormlessAction {
 	 * @return string HTML
 	 */
 	public function onView() {
+
 		if ( $this->page->getID() == 0 ) {
 			$s = $this->msg( 'nocredits' )->parse();
 		} else {
@@ -131,7 +132,7 @@ class CreditsAction extends FormlessAction {
 		$anon_ips = [];
 
 		# Sift for real versus user names
-		/** @var User $user */
+		/** @var $user User */
 		foreach ( $contributors as $user ) {
 			$cnt--;
 			if ( $user->isLoggedIn() ) {

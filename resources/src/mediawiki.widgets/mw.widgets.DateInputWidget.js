@@ -130,7 +130,6 @@
 		} );
 		this.inCalendar = 0;
 		this.inTextInput = 0;
-		this.closing = false;
 		this.inputFormat = config.inputFormat;
 		this.displayFormat = config.displayFormat;
 		this.longDisplayFormat = config.longDisplayFormat;
@@ -173,8 +172,7 @@
 		} );
 		this.$handle.on( {
 			click: this.onClick.bind( this ),
-			keypress: this.onKeyPress.bind( this ),
-			focus: this.onFocus.bind( this )
+			keypress: this.onKeyPress.bind( this )
 		} );
 
 		// Initialization
@@ -242,16 +240,6 @@
 
 	OO.inheritClass( mw.widgets.DateInputWidget, OO.ui.TextInputWidget );
 	OO.mixinClass( mw.widgets.DateInputWidget, OO.ui.mixin.IndicatorElement );
-
-	/* Events */
-
-	/**
-	 * Fired when the widget is deactivated (i.e. the calendar is closed). This can happen because
-	 * the user selected a value, or because the user blurred the widget.
-	 *
-	 * @event deactivate
-	 * @param {boolean} userSelected Whether the deactivation happened because the user selected a value
-	 */
 
 	/* Methods */
 
@@ -397,23 +385,13 @@
 	 * Deactivate this input field for data entry. Closes the calendar and hides the text field.
 	 *
 	 * @private
-	 * @param {boolean} [userSelected] Whether we are deactivating because the user selected a value
 	 */
-	mw.widgets.DateInputWidget.prototype.deactivate = function ( userSelected ) {
+	mw.widgets.DateInputWidget.prototype.deactivate = function () {
 		this.$element.removeClass( 'mw-widget-dateInputWidget-active' );
 		this.$handle.show();
 		this.textInput.toggle( false );
 		this.calendar.toggle( false );
 		this.setValidityFlag();
-
-		if ( userSelected ) {
-			// Prevent focusing the handle from reopening the calendar
-			this.closing = true;
-			this.$handle.focus();
-			this.closing = false;
-		}
-
-		this.emit( 'deactivate', !!userSelected );
 	};
 
 	/**
@@ -543,17 +521,6 @@
 	};
 
 	/**
-	 * Handle focus events.
-	 *
-	 * @private
-	 */
-	mw.widgets.DateInputWidget.prototype.onFocus = function () {
-		if ( !this.closing ) {
-			this.activate();
-		}
-	};
-
-	/**
 	 * Handle calendar key press events.
 	 *
 	 * @private
@@ -562,7 +529,8 @@
 	 */
 	mw.widgets.DateInputWidget.prototype.onCalendarKeyPress = function ( e ) {
 		if ( !this.isDisabled() && e.which === OO.ui.Keys.ENTER ) {
-			this.deactivate( true );
+			this.deactivate();
+			this.$handle.focus();
 			return false;
 		}
 	};
@@ -575,15 +543,13 @@
 	 * @return {boolean} False to cancel the default event
 	 */
 	mw.widgets.DateInputWidget.prototype.onCalendarClick = function ( e ) {
-		var targetClass = this.calendar.getPrecision() === 'month' ?
-			'mw-widget-calendarWidget-month' :
-			'mw-widget-calendarWidget-day';
 		if (
 			!this.isDisabled() &&
 			e.which === 1 &&
-			$( e.target ).hasClass( targetClass )
+			$( e.target ).hasClass( 'mw-widget-calendarWidget-day' )
 		) {
-			this.deactivate( true );
+			this.deactivate();
+			this.$handle.focus();
 			return false;
 		}
 	};
@@ -594,7 +560,8 @@
 	 * @private
 	 */
 	mw.widgets.DateInputWidget.prototype.onEnter = function () {
-		this.deactivate( true );
+		this.deactivate();
+		this.$handle.focus();
 	};
 
 	/**

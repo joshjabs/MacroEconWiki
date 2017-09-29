@@ -121,7 +121,7 @@ class SearchEngineTest extends MediaWikiLangTestCase {
 		$this->assertEquals(
 			[ 'Smithee' ],
 			$this->fetchIds( $this->search->searchText( 'smithee' ) ),
-			"Plain search" );
+			"Plain search failed" );
 	}
 
 	public function testWildcardSearch() {
@@ -177,7 +177,7 @@ class SearchEngineTest extends MediaWikiLangTestCase {
 		$snippet = "A <span class='searchmatch'>" . $phrase . "</span>";
 		$this->assertStringStartsWith( $snippet,
 			$match->getTextSnippet( $res->termMatches() ),
-			"Highlight a phrase search" );
+			"Phrase search failed to highlight" );
 	}
 
 	public function testTextPowerSearch() {
@@ -188,7 +188,7 @@ class SearchEngineTest extends MediaWikiLangTestCase {
 				'Talk:Not Main Page',
 			],
 			$this->fetchIds( $this->search->searchText( 'smithee' ) ),
-			"Power search" );
+			"Power search failed" );
 	}
 
 	public function testTitleSearch() {
@@ -198,7 +198,7 @@ class SearchEngineTest extends MediaWikiLangTestCase {
 				'Smithee',
 			],
 			$this->fetchIds( $this->search->searchTitle( 'smithee' ) ),
-			"Title search" );
+			"Title search failed" );
 	}
 
 	public function testTextTitlePowerSearch() {
@@ -210,7 +210,7 @@ class SearchEngineTest extends MediaWikiLangTestCase {
 				'Talk:Smithee',
 			],
 			$this->fetchIds( $this->search->searchTitle( 'smithee' ) ),
-			"Title power search" );
+			"Title power search failed" );
 	}
 
 	/**

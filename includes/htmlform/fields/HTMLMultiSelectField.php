@@ -142,7 +142,7 @@ class HTMLMultiSelectField extends HTMLFormField implements HTMLNestedFilterable
 	public function getInputOOUI( $value ) {
 		$this->mParent->getOutput()->addModules( 'oojs-ui-widgets' );
 
-		$attr = [];
+		$attr = $this->getTooltipAndAccessKey();
 		$attr['id'] = $this->mID;
 		$attr['name'] = "{$this->mName}[]";
 

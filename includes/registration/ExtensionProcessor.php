@@ -308,15 +308,8 @@ class ExtensionProcessor implements Processor {
 	protected function extractNamespaces( array $info ) {
 		if ( isset( $info['namespaces'] ) ) {
 			foreach ( $info['namespaces'] as $ns ) {
-				if ( defined( $ns['constant'] ) ) {
-					// If the namespace constant is already defined, use it.
-					// This allows namespace IDs to be overwritten locally.
-					$id = constant( $ns['constant'] );
-				} else {
-					$id = $ns['id'];
-					$this->defines[ $ns['constant'] ] = $id;
-				}
-
+				$id = $ns['id'];
+				$this->defines[$ns['constant']] = $id;
 				if ( !( isset( $ns['conditional'] ) && $ns['conditional'] ) ) {
 					// If it is not conditional, register it
 					$this->attributes['ExtensionNamespaces'][$id] = $ns['name'];
@@ -378,7 +371,7 @@ class ExtensionProcessor implements Processor {
 
 	protected function extractExtensionMessagesFiles( $dir, array $info ) {
 		if ( isset( $info['ExtensionMessagesFiles'] ) ) {
-			$this->globals["wgExtensionMessagesFiles"] += array_map( function ( $file ) use ( $dir ) {
+			$this->globals["wgExtensionMessagesFiles"] += array_map( function( $file ) use ( $dir ) {
 				return "$dir/$file";
 			}, $info['ExtensionMessagesFiles'] );
 		}
@@ -520,7 +513,10 @@ class ExtensionProcessor implements Processor {
 	public function getExtraAutoloaderPaths( $dir, array $info ) {
 		$paths = [];
 		if ( isset( $info['load_composer_autoloader'] ) && $info['load_composer_autoloader'] === true ) {
-			$paths[] = "$dir/vendor/autoload.php";
+			$path = "$dir/vendor/autoload.php";
+			if ( file_exists( $path ) ) {
+				$paths[] = $path;
+			}
 		}
 		return $paths;
 	}

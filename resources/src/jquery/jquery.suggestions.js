@@ -19,6 +19,7 @@
  * @class jQuery.plugin.suggestions
  */
 
+ // jscs:disable checkParamNames
 /**
  * @method suggestions
  * @chainable
@@ -93,6 +94,7 @@
  * @param {boolean} [options.highlightInput=false] Whether to highlight matched portions of the
  *  input or not.
  */
+ // jscs:enable checkParamNames
 
 ( function ( $, mw ) {
 
@@ -753,7 +755,7 @@
 							27, // escape
 							13, // enter
 							46, // delete
-							8 //   backspace
+							8   // backspace
 						];
 						if ( context.data.keypressedCount === 0 &&
 							e.which === context.data.keypressed &&

@@ -94,6 +94,7 @@ class JpegMetadataExtractor {
 				$buffer = fread( $fh, 1 );
 			}
 			if ( $buffer === "\xFE" ) {
+
 				// COM section -- file comment
 				// First see if valid utf-8,
 				// if not try to convert it to windows-1252.

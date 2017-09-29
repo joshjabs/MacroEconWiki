@@ -50,7 +50,7 @@ class LinkFilter {
 
 		$text = $content->getNativeData();
 
-		$regex = self::makeRegex( $filterEntry );
+		$regex = LinkFilter::makeRegex( $filterEntry );
 		return preg_match( $regex, $text );
 	}
 

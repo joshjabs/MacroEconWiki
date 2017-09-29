@@ -1,6 +1,5 @@
 <?php
 
-use Wikimedia\ScopedCallback;
 use Wikimedia\TestingAccessWrapper;
 
 /**
@@ -22,9 +21,9 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 				$this->isType( 'array' ),
 				$this->isType( 'int' )
 			)
-			->will( $this->returnCallback( function ( $a, $conj ) {
+			->will( $this->returnCallback( function( $a, $conj ) {
 				$sqlConj = $conj === LIST_AND ? ' AND ' : ' OR ';
-				return join( $sqlConj, array_map( function ( $s ) {
+				return join( $sqlConj, array_map( function( $s ) {
 					return '(' . $s . ')';
 				}, $a
 				) );
@@ -32,7 +31,7 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 
 		$mock->expects( $this->any() )
 			->method( 'addQuotes' )
-			->will( $this->returnCallback( function ( $value ) {
+			->will( $this->returnCallback( function( $value ) {
 				return "'$value'";
 			} ) );
 
@@ -42,7 +41,7 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 
 		$mock->expects( $this->any() )
 			->method( 'bitAnd' )
-			->willReturnCallback( function ( $a, $b ) {
+			->willReturnCallback( function( $a, $b ) {
 				return "($a & $b)";
 			} );
 
@@ -50,7 +49,7 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 	}
 
 	/**
-	 * @param PHPUnit_Framework_MockObject_MockObject|Database $mockDb
+	 * @param $mockDb
 	 * @return PHPUnit_Framework_MockObject_MockObject|LoadBalancer
 	 */
 	private function getMockLoadBalancer( $mockDb ) {
@@ -59,7 +58,7 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 			->getMock();
 		$mock->expects( $this->any() )
 			->method( 'getConnectionRef' )
-			->with( DB_REPLICA )
+			->with( DB_SLAVE )
 			->will( $this->returnValue( $mockDb ) );
 		return $mock;
 	}
@@ -107,12 +106,12 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 
 		$mock->expects( $this->any() )
 			->method( 'isAllowed' )
-			->will( $this->returnCallback( function ( $action ) use ( $notAllowedAction ) {
+			->will( $this->returnCallback( function( $action ) use ( $notAllowedAction ) {
 				return $action !== $notAllowedAction;
 			} ) );
 		$mock->expects( $this->any() )
 			->method( 'isAllowedAny' )
-			->will( $this->returnCallback( function () use ( $notAllowedAction ) {
+			->will( $this->returnCallback( function() use ( $notAllowedAction ) {
 				$actions = func_get_args();
 				return !in_array( $notAllowedAction, $actions );
 			} ) );
@@ -448,110 +447,49 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_FLAGS ] ],
 				null,
-				[],
 				[ 'rc_type', 'rc_minor', 'rc_bot' ],
-				[],
 				[],
 				[],
 			],
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_USER ] ],
 				null,
-				[],
 				[ 'rc_user_text' ],
-				[],
 				[],
 				[],
 			],
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_USER_ID ] ],
 				null,
-				[],
 				[ 'rc_user' ],
 				[],
 				[],
-				[],
 			],
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_COMMENT ] ],
 				null,
-				[],
-				[
-					'rc_comment_text' => 'rc_comment',
-					'rc_comment_data' => 'NULL',
-					'rc_comment_cid' => 'NULL',
-				],
+				[ 'rc_comment' ],
 				[],
 				[],
-				[],
-				[ 'wgCommentTableSchemaMigrationStage' => MIGRATION_OLD ],
-			],
-			[
-				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_COMMENT ] ],
-				null,
-				[ 'comment_rc_comment' => 'comment' ],
-				[
-					'rc_comment_text' => 'COALESCE( comment_rc_comment.comment_text, rc_comment )',
-					'rc_comment_data' => 'comment_rc_comment.comment_data',
-					'rc_comment_cid' => 'comment_rc_comment.comment_id',
-				],
-				[],
-				[],
-				[ 'comment_rc_comment' => [ 'LEFT JOIN', 'comment_rc_comment.comment_id = rc_comment_id' ] ],
-				[ 'wgCommentTableSchemaMigrationStage' => MIGRATION_WRITE_BOTH ],
-			],
-			[
-				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_COMMENT ] ],
-				null,
-				[ 'comment_rc_comment' => 'comment' ],
-				[
-					'rc_comment_text' => 'COALESCE( comment_rc_comment.comment_text, rc_comment )',
-					'rc_comment_data' => 'comment_rc_comment.comment_data',
-					'rc_comment_cid' => 'comment_rc_comment.comment_id',
-				],
-				[],
-				[],
-				[ 'comment_rc_comment' => [ 'LEFT JOIN', 'comment_rc_comment.comment_id = rc_comment_id' ] ],
-				[ 'wgCommentTableSchemaMigrationStage' => MIGRATION_WRITE_NEW ],
-			],
-			[
-				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_COMMENT ] ],
-				null,
-				[ 'comment_rc_comment' => 'comment' ],
-				[
-					'rc_comment_text' => 'comment_rc_comment.comment_text',
-					'rc_comment_data' => 'comment_rc_comment.comment_data',
-					'rc_comment_cid' => 'comment_rc_comment.comment_id',
-				],
-				[],
-				[],
-				[ 'comment_rc_comment' => [ 'JOIN', 'comment_rc_comment.comment_id = rc_comment_id' ] ],
-				[ 'wgCommentTableSchemaMigrationStage' => MIGRATION_NEW ],
 			],
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_PATROL_INFO ] ],
 				null,
-				[],
 				[ 'rc_patrolled', 'rc_log_type' ],
-				[],
 				[],
 				[],
 			],
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_SIZES ] ],
 				null,
-				[],
 				[ 'rc_old_len', 'rc_new_len' ],
-				[],
 				[],
 				[],
 			],
 			[
 				[ 'includeFields' => [ WatchedItemQueryService::INCLUDE_LOG_INFO ] ],
 				null,
-				[],
 				[ 'rc_logid', 'rc_log_type', 'rc_log_action', 'rc_params' ],
-				[],
 				[],
 				[],
 			],
@@ -559,27 +497,21 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 				[ 'namespaceIds' => [ 0, 1 ] ],
 				null,
 				[],
-				[],
 				[ 'wl_namespace' => [ 0, 1 ] ],
-				[],
 				[],
 			],
 			[
 				[ 'namespaceIds' => [ 0, "1; DROP TABLE watchlist;\n--" ] ],
 				null,
 				[],
-				[],
 				[ 'wl_namespace' => [ 0, 1 ] ],
-				[],
 				[],
 			],
 			[
 				[ 'rcTypes' => [ RC_EDIT, RC_NEW ] ],
 				null,
 				[],
-				[],
 				[ 'rc_type' => [ RC_EDIT, RC_NEW ] ],
-				[],
 				[],
 			],
 			[
@@ -587,36 +519,28 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 				null,
 				[],
 				[],
-				[],
-				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ]
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_NEWER ],
 				null,
 				[],
 				[],
-				[],
-				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ]
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_OLDER, 'start' => '20151212010101' ],
 				null,
 				[],
-				[],
 				[ "rc_timestamp <= '20151212010101'" ],
-				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ]
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_OLDER, 'end' => '20151212010101' ],
 				null,
 				[],
-				[],
 				[ "rc_timestamp >= '20151212010101'" ],
-				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ]
 			],
 			[
 				[
@@ -626,28 +550,22 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 				],
 				null,
 				[],
-				[],
 				[ "rc_timestamp <= '20151212020101'", "rc_timestamp >= '20151212010101'" ],
-				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ]
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_NEWER, 'start' => '20151212010101' ],
 				null,
 				[],
-				[],
 				[ "rc_timestamp >= '20151212010101'" ],
-				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ]
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_NEWER, 'end' => '20151212010101' ],
 				null,
 				[],
-				[],
 				[ "rc_timestamp <= '20151212010101'" ],
-				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ]
 			],
 			[
 				[
@@ -657,169 +575,133 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 				],
 				null,
 				[],
-				[],
 				[ "rc_timestamp >= '20151212010101'", "rc_timestamp <= '20151212020101'" ],
-				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ],
-				[],
+				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ]
 			],
 			[
 				[ 'limit' => 10 ],
 				null,
 				[],
 				[],
-				[],
 				[ 'LIMIT' => 11 ],
-				[],
 			],
 			[
 				[ 'limit' => "10; DROP TABLE watchlist;\n--" ],
 				null,
 				[],
 				[],
-				[],
 				[ 'LIMIT' => 11 ],
-				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_MINOR ] ],
 				null,
 				[],
-				[],
 				[ 'rc_minor != 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_NOT_MINOR ] ],
 				null,
 				[],
-				[],
 				[ 'rc_minor = 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_BOT ] ],
 				null,
 				[],
-				[],
 				[ 'rc_bot != 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_NOT_BOT ] ],
 				null,
 				[],
-				[],
 				[ 'rc_bot = 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_ANON ] ],
 				null,
 				[],
-				[],
 				[ 'rc_user = 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_NOT_ANON ] ],
 				null,
 				[],
-				[],
 				[ 'rc_user != 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_PATROLLED ] ],
 				null,
 				[],
-				[],
 				[ 'rc_patrolled != 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_NOT_PATROLLED ] ],
 				null,
 				[],
-				[],
 				[ 'rc_patrolled = 0' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_UNREAD ] ],
 				null,
 				[],
-				[],
 				[ 'rc_timestamp >= wl_notificationtimestamp' ],
-				[],
 				[],
 			],
 			[
 				[ 'filters' => [ WatchedItemQueryService::FILTER_NOT_UNREAD ] ],
 				null,
 				[],
-				[],
 				[ 'wl_notificationtimestamp IS NULL OR rc_timestamp < wl_notificationtimestamp' ],
-				[],
 				[],
 			],
 			[
 				[ 'onlyByUser' => 'SomeOtherUser' ],
 				null,
 				[],
-				[],
 				[ 'rc_user_text' => 'SomeOtherUser' ],
-				[],
 				[],
 			],
 			[
 				[ 'notByUser' => 'SomeOtherUser' ],
 				null,
 				[],
-				[],
 				[ "rc_user_text != 'SomeOtherUser'" ],
-				[],
 				[],
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_OLDER ],
 				[ '20151212010101', 123 ],
 				[],
-				[],
 				[
 					"(rc_timestamp < '20151212010101') OR ((rc_timestamp = '20151212010101') AND (rc_id <= 123))"
 				],
 				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ],
-				[],
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_NEWER ],
 				[ '20151212010101', 123 ],
 				[],
-				[],
 				[
 					"(rc_timestamp > '20151212010101') OR ((rc_timestamp = '20151212010101') AND (rc_id >= 123))"
 				],
 				[ 'ORDER BY' => [ 'rc_timestamp', 'rc_id' ] ],
-				[],
 			],
 			[
 				[ 'dir' => WatchedItemQueryService::DIR_OLDER ],
 				[ '20151212010101', "123; DROP TABLE watchlist;\n--" ],
 				[],
-				[],
 				[
 					"(rc_timestamp < '20151212010101') OR ((rc_timestamp = '20151212010101') AND (rc_id <= 123))"
 				],
 				[ 'ORDER BY' => [ 'rc_timestamp DESC', 'rc_id DESC' ] ],
-				[],
 			],
 		];
 	}
@@ -830,28 +712,10 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 	public function testGetWatchedItemsWithRecentChangeInfo_optionsAndEmptyResult(
 		array $options,
 		$startFrom,
-		array $expectedExtraTables,
 		array $expectedExtraFields,
 		array $expectedExtraConds,
-		array $expectedDbOptions,
-		array $expectedExtraJoinConds,
-		array $globals = []
+		array $expectedDbOptions
 	) {
-		// Sigh. This test class doesn't extend MediaWikiTestCase, so we have to reinvent setMwGlobals().
-		if ( $globals ) {
-			$resetGlobals = [];
-			foreach ( $globals as $k => $v ) {
-				$resetGlobals[$k] = $GLOBALS[$k];
-				$GLOBALS[$k] = $v;
-			}
-			$reset = new ScopedCallback( function () use ( $resetGlobals ) {
-				foreach ( $resetGlobals as $k => $v ) {
-					$GLOBALS[$k] = $v;
-				}
-			} );
-		}
-
-		$expectedTables = array_merge( [ 'recentchanges', 'watchlist', 'page' ], $expectedExtraTables );
 		$expectedFields = array_merge(
 			[
 				'rc_id',
@@ -872,33 +736,29 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 			[ 'wl_user' => 1, '(rc_this_oldid=page_latest) OR (rc_type=3)', ],
 			$expectedExtraConds
 		);
-		$expectedJoinConds = array_merge(
-			[
-				'watchlist' => [
-					'INNER JOIN',
-					[
-						'wl_namespace=rc_namespace',
-						'wl_title=rc_title'
-					]
-				],
-				'page' => [
-					'LEFT JOIN',
-					'rc_cur_id=page_id',
-				],
-			],
-			$expectedExtraJoinConds
-		);
 
 		$mockDb = $this->getMockDb();
 		$mockDb->expects( $this->once() )
 			->method( 'select' )
 			->with(
-				$expectedTables,
+				[ 'recentchanges', 'watchlist', 'page' ],
 				$expectedFields,
 				$expectedConds,
 				$this->isType( 'string' ),
 				$expectedDbOptions,
-				$expectedJoinConds
+				[
+					'watchlist' => [
+						'INNER JOIN',
+						[
+							'wl_namespace=rc_namespace',
+							'wl_title=rc_title'
+						]
+					],
+					'page' => [
+						'LEFT JOIN',
+						'rc_cur_id=page_id',
+					],
+				]
 			)
 			->will( $this->returnValue( [] ) );
 
@@ -1590,7 +1450,7 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 		$mockDb = $this->getMockDb();
 		$mockDb->expects( $this->any() )
 			->method( 'addQuotes' )
-			->will( $this->returnCallback( function ( $value ) {
+			->will( $this->returnCallback( function( $value ) {
 				return "'$value'";
 			} ) );
 		$mockDb->expects( $this->any() )
@@ -1599,9 +1459,9 @@ class WatchedItemQueryServiceUnitTest extends PHPUnit_Framework_TestCase {
 				$this->isType( 'array' ),
 				$this->isType( 'int' )
 			)
-			->will( $this->returnCallback( function ( $a, $conj ) {
+			->will( $this->returnCallback( function( $a, $conj ) {
 				$sqlConj = $conj === LIST_AND ? ' AND ' : ' OR ';
-				return join( $sqlConj, array_map( function ( $s ) {
+				return join( $sqlConj, array_map( function( $s ) {
 					return '(' . $s . ')';
 				}, $a
 				) );

@@ -5,15 +5,12 @@
  */
 class FakeDimensionFile extends File {
 	public $mustRender = false;
-	public $mime;
-	public $dimensions;
 
-	public function __construct( $dimensions, $mime = 'unknown/unknown' ) {
+	public function __construct( $dimensions ) {
 		parent::__construct( Title::makeTitle( NS_FILE, 'Test' ),
 			new NullRepo( null ) );
 
 		$this->dimensions = $dimensions;
-		$this->mime = $mime;
 	}
 
 	public function getWidth( $page = 1 ) {
@@ -30,9 +27,5 @@ class FakeDimensionFile extends File {
 
 	public function getPath() {
 		return '';
-	}
-
-	public function getMimeType() {
-		return $this->mime;
 	}
 }

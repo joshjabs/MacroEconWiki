@@ -28,7 +28,7 @@ class DBConnectionError extends DBExpectedError {
 	 * @param IDatabase $db Object throwing the error
 	 * @param string $error Error text
 	 */
-	public function __construct( IDatabase $db = null, $error = 'unknown error' ) {
+	function __construct( IDatabase $db = null, $error = 'unknown error' ) {
 		$msg = 'Cannot access the database';
 		if ( trim( $error ) != '' ) {
 			$msg .= ": $error";

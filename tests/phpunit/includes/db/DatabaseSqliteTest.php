@@ -87,10 +87,6 @@ class DatabaseSqliteTest extends MediaWikiTestCase {
 				new Blob( "hello" ),
 				"x'68656c6c6f'",
 			],
-			[ // #5: null
-				null,
-				"''",
-			],
 		];
 	}
 

@@ -70,16 +70,11 @@ class ApiFeedContributions extends ApiBase {
 			$feedUrl
 		);
 
-		// Convert year/month parameters to end parameter
-		$params['start'] = '';
-		$params['end'] = '';
-		$params = ContribsPager::processDateFilter( $params );
-
 		$pager = new ContribsPager( $this->getContext(), [
 			'target' => $target,
 			'namespace' => $params['namespace'],
-			'start' => $params['start'],
-			'end' => $params['end'],
+			'year' => $params['year'],
+			'month' => $params['month'],
 			'tagFilter' => $params['tagfilter'],
 			'deletedOnly' => $params['deletedonly'],
 			'topOnly' => $params['toponly'],

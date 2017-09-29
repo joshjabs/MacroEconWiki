@@ -168,7 +168,7 @@
 
 	// Expose API publicly
 	// @deprecated since MW 1.29
-	mw.log.deprecate( mw, 'toolbar', toolbar, null, 'mw.toolbar' );
+	mw.log.deprecate( mw, 'toolbar', toolbar );
 
 	$( function () {
 		var i, button;

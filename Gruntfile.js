@@ -44,6 +44,8 @@ module.exports = function ( grunt ) {
 				'!extensions/**/*.js',
 				'!skins/**/*.js',
 				// Skip functions aren't even parseable
+				'!resources/src/dom-level2-skip.js',
+				'!resources/src/es5-skip.js',
 				'!resources/src/mediawiki.hidpi-skip.js'
 			]
 		},

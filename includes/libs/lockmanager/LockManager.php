@@ -26,6 +26,7 @@ use Wikimedia\WaitConditionLoop;
  *
  * @file
  * @ingroup LockManager
+ * @author Aaron Schulz
  */
 
 /**

@@ -29,7 +29,7 @@ use MediaWiki\MediaWikiServices;
  * Object passed around to modules which contains information about the state
  * of a specific loader request.
  */
-class ResourceLoaderContext implements MessageLocalizer {
+class ResourceLoaderContext {
 	protected $resourceLoader;
 	protected $request;
 	protected $logger;
@@ -222,12 +222,10 @@ class ResourceLoaderContext implements MessageLocalizer {
 	 * Get a Message object with context set.  See wfMessage for parameters.
 	 *
 	 * @since 1.27
-	 * @param string|string[]|MessageSpecifier $key Message key, or array of keys,
-	 *   or a MessageSpecifier.
-	 * @param mixed $args,...
+	 * @param mixed ...
 	 * @return Message
 	 */
-	public function msg( $key ) {
+	public function msg() {
 		return call_user_func_array( 'wfMessage', func_get_args() )
 			->inLanguage( $this->getLanguage() )
 			// Use a dummy title because there is no real title

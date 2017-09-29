@@ -14,7 +14,7 @@
 	 * newline-separated usernames.
 	 *
 	 * @class
-	 * @extends OO.ui.MenuTagMultiselectWidget
+	 * @extends OO.ui.CapsuleMultiselectWidget
 	 *
 	 * @constructor
 	 * @param {Object} [config] Configuration options
@@ -56,9 +56,17 @@
 		this.menu = this.getMenu();
 
 		// Events
+		// Update contents of autocomplete menu as user types letters
+		this.$input.on( {
+			keyup: this.updateMenuItems.bind( this )
+		} );
+		// When option is selected from autocomplete menu, update the menu
+		this.menu.connect( this, {
+			select: 'updateMenuItems'
+		} );
 		// When list of selected usernames changes, update hidden input
 		this.connect( this, {
-			change: 'onMultiselectChange'
+			change: 'updateHiddenInput'
 		} );
 
 		// API init
@@ -67,7 +75,7 @@
 
 	/* Setup */
 
-	OO.inheritClass( mw.widgets.UsersMultiselectWidget, OO.ui.MenuTagMultiselectWidget );
+	OO.inheritClass( mw.widgets.UsersMultiselectWidget, OO.ui.CapsuleMultiselectWidget );
 	OO.mixinClass( mw.widgets.UsersMultiselectWidget, OO.ui.mixin.PendingElement );
 
 	/* Methods */
@@ -75,10 +83,10 @@
 	/**
 	 * Get currently selected usernames
 	 *
-	 * @return {string[]} usernames
+	 * @return {Array} usernames
 	 */
-	mw.widgets.UsersMultiselectWidget.prototype.getSelectedUsernames = function () {
-		return this.getValue();
+	mw.widgets.UsersMultiselectWidget.prototype.getSelectedUsernames = function() {
+		return this.getItemsData();
 	};
 
 	/**
@@ -86,8 +94,8 @@
 	 *
 	 * @private
 	 */
-	mw.widgets.UsersMultiselectWidget.prototype.updateMenuItems = function () {
-		var inputValue = this.input.getValue();
+	mw.widgets.UsersMultiselectWidget.prototype.updateMenuItems = function() {
+		var inputValue = this.$input.val();
 
 		if ( inputValue === this.inputValue ) {
 			// Do not restart api query if nothing has changed in the input
@@ -108,7 +116,7 @@
 				// character to uppercase so that "fo" may yield "Foo".
 				auprefix: inputValue[ 0 ].toUpperCase() + inputValue.slice( 1 ),
 				aulimit: this.limit
-			} ).done( function ( response ) {
+			} ).done( function( response ) {
 				var suggestions = response.query.allusers,
 					selected = this.getSelectedUsernames();
 
@@ -120,15 +128,18 @@
 							label: user.name
 						} );
 					}
-				} ).filter( function ( item ) {
+				} ).filter( function( item ) {
 					return item !== undefined;
 				} );
 
 				// Remove all items from menu add fill it with new
 				this.menu.clearItems();
-				this.menu.addItems( suggestions );
-				// Make the menu visible; it might not be if it was previously empty
-				this.menu.toggle( true );
+
+				// Additional check to prevent bug of autoinserting first suggestion
+				// while removing user from the list
+				if ( inputValue.length > 1 || suggestions.length > 1 ) {
+					this.menu.addItems( suggestions );
+				}
 
 				this.popPending();
 			}.bind( this ) ).fail( this.popPending.bind( this ) );
@@ -137,35 +148,16 @@
 		}
 	};
 
-	mw.widgets.UsersMultiselectWidget.prototype.onInputChange = function () {
-		mw.widgets.UsersMultiselectWidget.parent.prototype.onInputChange.apply( this, arguments );
-
-		this.updateMenuItems();
-	};
-
 	/**
 	 * If used inside HTML form, then update hiddenInput with list o
 	 * newline-separated usernames.
 	 *
 	 * @private
 	 */
-	mw.widgets.UsersMultiselectWidget.prototype.updateHiddenInput = function () {
+	mw.widgets.UsersMultiselectWidget.prototype.updateHiddenInput = function() {
 		if ( 'hiddenInput' in this ) {
 			this.hiddenInput.val( this.getSelectedUsernames().join( '\n' ) );
-			// Hidden inputs do not trigger onChange.
-			// @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/hidden
-			this.hiddenInput.trigger( 'change' );
 		}
-	};
-
-	/**
-	 * React to the 'change' event.
-	 *
-	 * Updates the hidden input and clears the text from the text box.
-	 */
-	mw.widgets.UsersMultiselectWidget.prototype.onMultiselectChange = function () {
-		this.updateHiddenInput();
-		this.input.setValue( '' );
 	};
 
 }( jQuery, mediaWiki ) );

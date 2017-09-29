@@ -1,5 +1,7 @@
 <?php
 /**
+ * Copyright © 2008 Aaron Schulz
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -118,15 +120,16 @@ class ActiveUsersPager extends UsersPager {
 				) . ')';
 		}
 
+		if ( $dbr->implicitGroupby() ) {
+			$options = [ 'GROUP BY' => [ 'qcc_title' ] ];
+		} else {
+			$options = [ 'GROUP BY' => [ 'user_name', 'user_id', 'qcc_title' ] ];
+		}
+
 		return [
 			'tables' => $tables,
-			'fields' => [
-				'qcc_title',
-				'user_name' => 'qcc_title',
-				'user_id' => 'MAX(user_id)',
-				'recentedits' => 'COUNT(*)'
-			],
-			'options' => [ 'GROUP BY' => [ 'qcc_title' ] ],
+			'fields' => [ 'user_name', 'user_id', 'recentedits' => 'COUNT(*)', 'qcc_title' ],
+			'options' => $options,
 			'conds' => $conds
 		];
 	}

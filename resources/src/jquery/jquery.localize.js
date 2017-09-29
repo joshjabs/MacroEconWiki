@@ -137,7 +137,7 @@
 		// Attributes
 		// Note: there's no way to prevent escaping of values being injected into attributes, this is
 		// on purpose, not a design flaw.
-		attributes.forEach( function ( attr ) {
+		$.each( attributes, function ( i, attr ) {
 			var msgAttr = attr + '-msg';
 			$target.find( '[' + msgAttr + ']' ).each( function () {
 				var $el = $( this );

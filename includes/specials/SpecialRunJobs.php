@@ -19,6 +19,7 @@
  *
  * @file
  * @ingroup SpecialPage
+ * @author Aaron Schulz
  */
 
 use MediaWiki\Logger\LoggerFactory;

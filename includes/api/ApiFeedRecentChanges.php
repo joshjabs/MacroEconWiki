@@ -63,8 +63,8 @@ class ApiFeedRecentChanges extends ApiBase {
 
 		$feedFormat = $this->params['feedformat'];
 		$specialClass = $this->params['target'] !== null
-			? SpecialRecentChangesLinked::class
-			: SpecialRecentChanges::class;
+			? 'SpecialRecentchangeslinked'
+			: 'SpecialRecentchanges';
 
 		$formatter = $this->getFeedObject( $feedFormat, $specialClass );
 
@@ -90,12 +90,12 @@ class ApiFeedRecentChanges extends ApiBase {
 	 * Return a ChannelFeed object.
 	 *
 	 * @param string $feedFormat Feed's format (either 'rss' or 'atom')
-	 * @param string $specialClass Relevant special page name (either 'SpecialRecentChanges' or
-	 *     'SpecialRecentChangesLinked')
+	 * @param string $specialClass Relevant special page name (either 'SpecialRecentchanges' or
+	 *     'SpecialRecentchangeslinked')
 	 * @return ChannelFeed
 	 */
 	public function getFeedObject( $feedFormat, $specialClass ) {
-		if ( $specialClass === SpecialRecentChangesLinked::class ) {
+		if ( $specialClass === 'SpecialRecentchangeslinked' ) {
 			$title = Title::newFromText( $this->params['target'] );
 			if ( !$title ) {
 				$this->dieWithError( [ 'apierror-invalidtitle', wfEscapeWikiText( $this->params['target'] ) ] );

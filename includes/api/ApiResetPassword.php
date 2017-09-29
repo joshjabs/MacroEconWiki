@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright © 2016 Wikimedia Foundation and contributors
+ * Copyright © 2016 Brad Jorsch <bjorsch@wikimedia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,11 +43,11 @@ class ApiResetPassword extends ApiBase {
 		return $this->hasAnyRoutes;
 	}
 
-	protected function getExtendedDescription() {
+	protected function getDescriptionMessage() {
 		if ( !$this->hasAnyRoutes() ) {
-			return 'apihelp-resetpassword-extended-description-noroutes';
+			return 'apihelp-resetpassword-description-noroutes';
 		}
-		return parent::getExtendedDescription();
+		return parent::getDescriptionMessage();
 	}
 
 	public function execute() {

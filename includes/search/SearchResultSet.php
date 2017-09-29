@@ -152,7 +152,6 @@ class SearchResultSet {
 	/**
 	 * Return a result set of hits on other (multiple) wikis associated with this one
 	 *
-	 * @param int $type
 	 * @return SearchResultSet[]
 	 */
 	function getInterwikiResults( $type = self::SECONDARY_RESULTS ) {
@@ -162,7 +161,6 @@ class SearchResultSet {
 	/**
 	 * Check if there are results on other wikis
 	 *
-	 * @param int $type
 	 * @return bool
 	 */
 	function hasInterwikiResults( $type = self::SECONDARY_RESULTS ) {
@@ -265,15 +263,5 @@ class SearchResultSet {
 		}
 		$result->setExtensionData( $this->extraData[$id] );
 		return $this->extraData[$id];
-	}
-
-	/**
-	 * @return int|null The offset the current page starts at. Typically
-	 *  this should be null to allow the UI to decide on its own, but in
-	 *  special cases like interleaved AB tests specifying explicitly is
-	 *  necessary.
-	 */
-	public function getOffset() {
-		return null;
 	}
 }

@@ -19,6 +19,7 @@
  *
  * @file
  * @ingroup LockManager
+ * @author Aaron Schulz
  */
 
 /**
@@ -85,7 +86,7 @@ class ScopedLock {
 	 * This is useful for early release of locks before function scope is destroyed.
 	 * This is the same as setting the lock object to null.
 	 *
-	 * @param ScopedLock &$lock
+	 * @param ScopedLock $lock
 	 * @since 1.21
 	 */
 	public static function release( ScopedLock &$lock = null ) {

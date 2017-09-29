@@ -19,6 +19,7 @@
  *
  * @file
  * @ingroup Maintenance
+ * @author Aaron Schulz
  */
 
 require_once __DIR__ . '/Maintenance.php';

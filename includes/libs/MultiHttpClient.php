@@ -20,10 +20,6 @@
  * @file
  */
 
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
-
 /**
  * Class to handle concurrent HTTP requests
  *
@@ -43,27 +39,26 @@ use Psr\Log\NullLogger;
  *                  - relayResponseHeaders : write out header via header()
  * Request maps can use integer index 0 instead of 'method' and 1 instead of 'url'.
  *
+ * @author Aaron Schulz
  * @since 1.23
  */
-class MultiHttpClient implements LoggerAwareInterface {
+class MultiHttpClient {
 	/** @var resource */
 	protected $multiHandle = null; // curl_multi handle
 	/** @var string|null SSL certificates path  */
 	protected $caBundlePath;
-	/** @var int */
+	/** @var integer */
 	protected $connTimeout = 10;
-	/** @var int */
+	/** @var integer */
 	protected $reqTimeout = 300;
 	/** @var bool */
 	protected $usePipelining = false;
-	/** @var int */
+	/** @var integer */
 	protected $maxConnsPerHost = 50;
 	/** @var string|null proxy */
 	protected $proxy;
 	/** @var string */
 	protected $userAgent = 'wikimedia/multi-http-client v1.0';
-	/** @var LoggerInterface */
-	protected $logger;
 
 	/**
 	 * @param array $options
@@ -83,16 +78,12 @@ class MultiHttpClient implements LoggerAwareInterface {
 			}
 		}
 		static $opts = [
-			'connTimeout', 'reqTimeout', 'usePipelining', 'maxConnsPerHost',
-			'proxy', 'userAgent', 'logger'
+			'connTimeout', 'reqTimeout', 'usePipelining', 'maxConnsPerHost', 'proxy', 'userAgent'
 		];
 		foreach ( $opts as $key ) {
 			if ( isset( $options[$key] ) ) {
 				$this->$key = $options[$key];
 			}
-		}
-		if ( $this->logger === null ) {
-			$this->logger = new NullLogger;
 		}
 	}
 
@@ -171,7 +162,6 @@ class MultiHttpClient implements LoggerAwareInterface {
 			} elseif ( !isset( $req['url'] ) ) {
 				throw new Exception( "Request has no 'url' field set." );
 			}
-			$this->logger->debug( "{$req['method']}: {$req['url']}" );
 			$req['query'] = isset( $req['query'] ) ? $req['query'] : [];
 			$headers = []; // normalized headers
 			if ( isset( $req['headers'] ) ) {
@@ -245,8 +235,6 @@ class MultiHttpClient implements LoggerAwareInterface {
 					if ( function_exists( 'curl_strerror' ) ) {
 						$req['response']['error'] .= " " . curl_strerror( $errno );
 					}
-					$this->logger->warning( "Error fetching URL \"{$req['url']}\": " .
-						$req['response']['error'] );
 				}
 			} else {
 				$req['response']['error'] = "(curl error: no status set)";
@@ -275,7 +263,7 @@ class MultiHttpClient implements LoggerAwareInterface {
 	}
 
 	/**
-	 * @param array &$req HTTP request map
+	 * @param array $req HTTP request map
 	 * @param array $opts
 	 *   - connTimeout    : default connection timeout
 	 *   - reqTimeout     : default request timeout
@@ -430,15 +418,6 @@ class MultiHttpClient implements LoggerAwareInterface {
 			$this->multiHandle = $cmh;
 		}
 		return $this->multiHandle;
-	}
-
-	/**
-	 * Register a logger
-	 *
-	 * @param LoggerInterface $logger
-	 */
-	public function setLogger( LoggerInterface $logger ) {
-		$this->logger = $logger;
 	}
 
 	function __destruct() {

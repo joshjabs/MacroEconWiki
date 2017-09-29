@@ -78,7 +78,6 @@ class ParserTestResultNormalizer {
 
 	/**
 	 * Serialize the XML DOM for comparison purposes. This does not generate HTML.
-	 * @return string
 	 */
 	protected function serialize() {
 		return strtr( $this->doc->saveXML( $this->body ),

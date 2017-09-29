@@ -1,22 +1,14 @@
 'use strict';
 const assert = require( 'assert' ),
-	EditPage = require( '../pageobjects/edit.page' ),
 	HistoryPage = require( '../pageobjects/history.page' ),
-	UserLoginPage = require( '../pageobjects/userlogin.page' );
+	EditPage = require( '../pageobjects/edit.page' );
 
 describe( 'Page', function () {
 
 	var content,
 		name;
 
-	before( function () {
-		// disable VisualEditor welcome dialog
-		UserLoginPage.open();
-		browser.localStorage( 'POST', { key: 've-beta-welcome-dialog', value: '1' } );
-	} );
-
 	beforeEach( function () {
-		browser.deleteCookie();
 		content = Math.random().toString();
 		name = Math.random().toString();
 	} );
@@ -37,14 +29,12 @@ describe( 'Page', function () {
 		var content2 = Math.random().toString();
 
 		// create
-		browser.call( function () {
-			return EditPage.apiEdit( name, content );
-		} );
+		EditPage.edit( name, content );
 
 		// edit
 		EditPage.edit( name, content2 );
 
-		// check
+		// check content
 		assert.equal( EditPage.heading.getText(), name );
 		assert.equal( EditPage.displayedContent.getText(), content2 );
 
@@ -53,9 +43,7 @@ describe( 'Page', function () {
 	it( 'should have history', function () {
 
 		// create
-		browser.call( function () {
-			return EditPage.apiEdit( name, content );
-		} );
+		EditPage.edit( name, content );
 
 		// check
 		HistoryPage.open( name );

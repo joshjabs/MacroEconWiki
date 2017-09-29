@@ -126,7 +126,7 @@ class SpecialListGroupRights extends SpecialPage {
 				? $groupsRemoveFromSelf[$group]
 				: [];
 
-			$id = $group == '*' ? false : Sanitizer::escapeIdForAttribute( $group );
+			$id = $group == '*' ? false : Sanitizer::escapeId( $group );
 			$out->addHTML( Html::rawElement( 'tr', [ 'id' => $id ], "
 				<td>$grouppage$grouplink</td>
 					<td>" .

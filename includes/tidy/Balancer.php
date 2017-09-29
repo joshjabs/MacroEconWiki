@@ -627,7 +627,6 @@ class BalanceElement {
 
 	/**
 	 * Get a string key for the Noah's Ark algorithm
-	 * @return string
 	 */
 	public function getNoahKey() {
 		if ( $this->noahKey === null ) {
@@ -711,7 +710,6 @@ class BalanceStack implements IteratorAggregate {
 	/**
 	 * Insert a comment at the appropriate place for inserting a node.
 	 * @param string $value Content of the comment.
-	 * @return string
 	 * @see https://html.spec.whatwg.org/multipage/syntax.html#insert-a-comment
 	 */
 	public function insertComment( $value ) {
@@ -723,7 +721,6 @@ class BalanceStack implements IteratorAggregate {
 	 * Insert text at the appropriate place for inserting a node.
 	 * @param string $value
 	 * @param bool $isComment
-	 * @return string
 	 * @see https://html.spec.whatwg.org/multipage/syntax.html#appropriate-place-for-inserting-a-node
 	 */
 	public function insertText( $value, $isComment = false ) {
@@ -904,8 +901,6 @@ class BalanceStack implements IteratorAggregate {
 
 	/**
 	 * Return the adjusted current node.
-	 * @param string $fragmentContext
-	 * @return string
 	 */
 	public function adjustedCurrentNode( $fragmentContext ) {
 		return ( $fragmentContext && count( $this->elements ) === 1 ) ?
@@ -1208,7 +1203,7 @@ class BalanceStack implements IteratorAggregate {
 			$furthestBlock = null;
 			$furthestBlockIndex = -1;
 			$stackLength = $this->length();
-			for ( $i = $index + 1; $i < $stackLength; $i++ ) {
+			for ( $i = $index+1; $i < $stackLength; $i++ ) {
 				if ( $this->node( $i )->isA( BalanceSets::$specialSet ) ) {
 					$furthestBlock = $this->node( $i );
 					$furthestBlockIndex = $i;
@@ -1230,7 +1225,7 @@ class BalanceStack implements IteratorAggregate {
 
 			// Let the common ancestor be the element immediately above
 			// the formatting element in the stack of open elements.
-			$ancestor = $this->node( $index - 1 );
+			$ancestor = $this->node( $index-1 );
 
 			// Let a bookmark note the position of the formatting
 			// element in the list of active formatting elements
@@ -1518,8 +1513,6 @@ class BalanceActiveFormattingElements {
 	 * Find and return the last element with the specified tag between the
 	 * end of the list and the last marker on the list.
 	 * Used when parsing &lt;a&gt; "in body mode".
-	 * @param string $tag
-	 * @return null|Node
 	 */
 	public function findElementByTag( $tag ) {
 		$elt = $this->tail;
@@ -1535,7 +1528,7 @@ class BalanceActiveFormattingElements {
 	/**
 	 * Determine whether an element is in the list of formatting elements.
 	 * @param BalanceElement $elt
-	 * @return bool
+	 * @return boolean
 	 */
 	public function isInList( BalanceElement $elt ) {
 		return $this->head === $elt || $elt->prevAFE;
@@ -1898,7 +1891,7 @@ class Balancer {
 			$bad = array_uintersect_assoc(
 				$this->allowedHtmlElements,
 				BalanceSets::$unsupportedSet[BalanceSets::HTML_NAMESPACE],
-				function ( $a, $b ) {
+				function( $a, $b ) {
 					// Ignore the values (just intersect the keys) by saying
 					// all values are equal to each other.
 					return 0;
@@ -2123,7 +2116,7 @@ class Balancer {
 				return $this->insertToken( $token, $value, $attribs, $selfClose );
 			}
 			// "Any other start tag"
-			$adjusted = ( $this->fragmentContext && $this->stack->length() === 1 ) ?
+			$adjusted = ( $this->fragmentContext && $this->stack->length()===1 ) ?
 				$this->fragmentContext : $this->stack->currentNode;
 			$this->stack->insertForeignElement(
 				$adjusted->namespaceURI, $value, $attribs
@@ -2163,7 +2156,7 @@ class Balancer {
 		if (
 			$this->allowComments &&
 			!( $this->inRCDATA || $this->inRAWTEXT ) &&
-			preg_match( self::VALID_COMMENT_REGEX, $x, $regs, PREG_OFFSET_CAPTURE ) &&
+			preg_match( Balancer::VALID_COMMENT_REGEX, $x, $regs, PREG_OFFSET_CAPTURE ) &&
 			// verify EOF condition where necessary
 			( $regs[4][1] < 0 || !$this->bitsIterator->valid() )
 		) {
@@ -2249,7 +2242,7 @@ class Balancer {
 
 	private function switchMode( $mode ) {
 		Assert::parameter(
-			substr( $mode, -4 ) === 'Mode', '$mode', 'should end in Mode'
+			substr( $mode, -4 )==='Mode', '$mode', 'should end in Mode'
 		);
 		$oldMode = $this->parseMode;
 		$this->parseMode = $mode;
@@ -2274,8 +2267,8 @@ class Balancer {
 				switch ( $node->localName ) {
 				case 'select':
 					$stackLength = $this->stack->length();
-					for ( $j = $i + 1; $j < $stackLength - 1; $j++ ) {
-						$ancestor = $this->stack->node( $stackLength - $j - 1 );
+					for ( $j = $i + 1; $j < $stackLength-1; $j++ ) {
+						$ancestor = $this->stack->node( $stackLength-$j-1 );
 						if ( $ancestor->isHtmlNamed( 'template' ) ) {
 							break;
 						}

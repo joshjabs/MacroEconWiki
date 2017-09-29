@@ -102,6 +102,8 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 	private $db;
 
 	/**
+	 * Constructor
+	 *
 	 * @param Title $title Title of the page we're updating
 	 * @param ParserOutput $parserOutput Output from a full parse of this page
 	 * @param bool $recursive Queue jobs for recursive updates?
@@ -192,7 +194,7 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 	 * Acquire a lock for performing link table updates for a page on a DB
 	 *
 	 * @param IDatabase $dbw
-	 * @param int $pageId
+	 * @param integer $pageId
 	 * @param string $why One of (job, atomicity)
 	 * @return ScopedCallback
 	 * @throws RuntimeException
@@ -362,24 +364,21 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 	private function updateCategoryCounts( array $added, array $deleted ) {
 		global $wgUpdateRowsPerQuery;
 
-		if ( !$added && !$deleted ) {
-			return;
-		}
-
-		$wikiId = $this->getDB()->getWikiID();
 		$wp = WikiPage::factory( $this->mTitle );
-		$lbf = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
-		// T163801: try to release any row locks to reduce contention
-		$lbf->commitAndWaitForReplication( __METHOD__, $this->ticket, [ 'wiki' => $wikiId ] );
+		$factory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 
 		foreach ( array_chunk( array_keys( $added ), $wgUpdateRowsPerQuery ) as $addBatch ) {
 			$wp->updateCategoryCounts( $addBatch, [], $this->mId );
-			$lbf->commitAndWaitForReplication( __METHOD__, $this->ticket, [ 'wiki' => $wikiId ] );
+			$factory->commitAndWaitForReplication(
+				__METHOD__, $this->ticket, [ 'wiki' => $this->getDB()->getWikiID() ]
+			);
 		}
 
 		foreach ( array_chunk( array_keys( $deleted ), $wgUpdateRowsPerQuery ) as $deleteBatch ) {
 			$wp->updateCategoryCounts( [], $deleteBatch, $this->mId );
-			$lbf->commitAndWaitForReplication( __METHOD__, $this->ticket, [ 'wiki' => $wikiId ] );
+			$factory->commitAndWaitForReplication(
+				__METHOD__, $this->ticket, [ 'wiki' => $this->getDB()->getWikiID() ]
+			);
 		}
 	}
 
@@ -400,7 +399,7 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 	private function incrTableUpdate( $table, $prefix, $deletions, $insertions ) {
 		$services = MediaWikiServices::getInstance();
 		$bSize = $services->getMainConfig()->get( 'UpdateRowsPerQuery' );
-		$lbf = $services->getDBLoadBalancerFactory();
+		$factory = $services->getDBLoadBalancerFactory();
 
 		if ( $table === 'page_props' ) {
 			$fromField = 'pp_page';
@@ -452,7 +451,7 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 
 		foreach ( $deleteWheres as $deleteWhere ) {
 			$this->getDB()->delete( $table, $deleteWhere, __METHOD__ );
-			$lbf->commitAndWaitForReplication(
+			$factory->commitAndWaitForReplication(
 				__METHOD__, $this->ticket, [ 'wiki' => $this->getDB()->getWikiID() ]
 			);
 		}
@@ -460,7 +459,7 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 		$insertBatches = array_chunk( $insertions, $bSize );
 		foreach ( $insertBatches as $insertBatch ) {
 			$this->getDB()->insert( $table, $insertBatch, __METHOD__, 'IGNORE' );
-			$lbf->commitAndWaitForReplication(
+			$factory->commitAndWaitForReplication(
 				__METHOD__, $this->ticket, [ 'wiki' => $this->getDB()->getWikiID() ]
 			);
 		}
@@ -548,6 +547,7 @@ class LinksUpdate extends DataUpdate implements EnqueueableDataUpdate {
 		foreach ( $diffs as $url => $dummy ) {
 			foreach ( wfMakeUrlIndexes( $url ) as $index ) {
 				$arr[] = [
+					'el_id' => $this->getDB()->nextSequenceValue( 'externallinks_el_id_seq' ),
 					'el_from' => $this->mId,
 					'el_to' => $url,
 					'el_index' => $index,

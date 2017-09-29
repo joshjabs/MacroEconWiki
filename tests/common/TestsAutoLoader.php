@@ -56,7 +56,6 @@ $wgAutoloadClasses += [
 	'MediaWikiLangTestCase' => "$testDir/phpunit/MediaWikiLangTestCase.php",
 	'ResourceLoaderTestCase' => "$testDir/phpunit/ResourceLoaderTestCase.php",
 	'ResourceLoaderTestModule' => "$testDir/phpunit/ResourceLoaderTestCase.php",
-	'ResourceLoaderFileTestModule' => "$testDir/phpunit/ResourceLoaderTestCase.php",
 	'ResourceLoaderFileModuleTestModule' => "$testDir/phpunit/ResourceLoaderTestCase.php",
 	'EmptyResourceLoader' => "$testDir/phpunit/ResourceLoaderTestCase.php",
 	'TestUser' => "$testDir/phpunit/includes/TestUser.php",
@@ -65,6 +64,7 @@ $wgAutoloadClasses += [
 
 	# tests/phpunit/includes
 	'RevisionStorageTest' => "$testDir/phpunit/includes/RevisionStorageTest.php",
+	'TestingAccessWrapper' => "$testDir/phpunit/includes/TestingAccessWrapper.php",
 	'TestLogger' => "$testDir/phpunit/includes/TestLogger.php",
 
 	# tests/phpunit/includes/api
@@ -158,6 +158,8 @@ $wgAutoloadClasses += [
 	'MockImageHandler' => "$testDir/phpunit/mocks/media/MockImageHandler.php",
 	'MockSvgHandler' => "$testDir/phpunit/mocks/media/MockSvgHandler.php",
 	'MockDjVuHandler' => "$testDir/phpunit/mocks/media/MockDjVuHandler.php",
+	'MockOggHandler' => "$testDir/phpunit/mocks/media/MockOggHandler.php",
+	'MockMediaHandlerFactory' => "$testDir/phpunit/mocks/media/MockMediaHandlerFactory.php",
 	'MockChangesListFilter' => "$testDir/phpunit/mocks/MockChangesListFilter.php",
 	'MockChangesListFilterGroup' => "$testDir/phpunit/mocks/MockChangesListFilterGroup.php",
 	'MockWebRequest' => "$testDir/phpunit/mocks/MockWebRequest.php",

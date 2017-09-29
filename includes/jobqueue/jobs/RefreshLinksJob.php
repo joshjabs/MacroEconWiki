@@ -39,9 +39,9 @@ use Wikimedia\Rdbms\DBReplicationWaitError;
 class RefreshLinksJob extends Job {
 	/** @var float Cache parser output when it takes this long to render */
 	const PARSE_THRESHOLD_SEC = 1.0;
-	/** @var int Lag safety margin when comparing root job times to last-refresh times */
+	/** @var integer Lag safety margin when comparing root job times to last-refresh times */
 	const CLOCK_FUDGE = 10;
-	/** @var int How many seconds to wait for replica DBs to catch up */
+	/** @var integer How many seconds to wait for replica DBs to catch up */
 	const LAG_WAIT_TIMEOUT = 15;
 
 	function __construct( Title $title, array $params ) {
@@ -207,7 +207,7 @@ class RefreshLinksJob extends Job {
 			if ( $page->getTouched() >= $this->params['rootJobTimestamp'] || $opportunistic ) {
 				// Cache is suspected to be up-to-date. As long as the cache rev ID matches
 				// and it reflects the job's triggering change, then it is usable.
-				$parserOutput = $services->getParserCache()->getDirty( $page, $parserOptions );
+				$parserOutput = ParserCache::singleton()->getDirty( $page, $parserOptions );
 				if ( !$parserOutput
 					|| $parserOutput->getCacheRevisionId() != $revision->getId()
 					|| $parserOutput->getCacheTime() < $skewedTimestamp
@@ -234,7 +234,7 @@ class RefreshLinksJob extends Job {
 				&& $parserOutput->isCacheable()
 			) {
 				$ctime = wfTimestamp( TS_MW, (int)$start ); // cache time
-				$services->getParserCache()->save(
+				ParserCache::singleton()->save(
 					$parserOutput, $page, $parserOptions, $ctime, $revision->getId()
 				);
 			}
@@ -279,10 +279,6 @@ class RefreshLinksJob extends Job {
 
 		InfoAction::invalidateCache( $title );
 
-		// Commit any writes here in case this method is called in a loop.
-		// In that case, the scoped lock will fail to be acquired.
-		$lbFactory->commitAndWaitForReplication( __METHOD__, $ticket );
-
 		return true;
 	}
 
@@ -301,12 +297,6 @@ class RefreshLinksJob extends Job {
 	}
 
 	public function workItemCount() {
-		if ( !empty( $this->params['recursive'] ) ) {
-			return 0; // nothing actually refreshed
-		} elseif ( isset( $this->params['pages'] ) ) {
-			return count( $this->params['pages'] );
-		}
-
-		return 1; // one title
+		return isset( $this->params['pages'] ) ? count( $this->params['pages'] ) : 1;
 	}
 }

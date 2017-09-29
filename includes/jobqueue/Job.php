@@ -69,22 +69,12 @@ abstract class Job implements IJobSpecification {
 		global $wgJobClasses;
 
 		if ( isset( $wgJobClasses[$command] ) ) {
-			$handler = $wgJobClasses[$command];
+			$class = $wgJobClasses[$command];
 
-			if ( is_callable( $handler ) ) {
-				$job = call_user_func( $handler, $title, $params );
-			} elseif ( class_exists( $handler ) ) {
-				$job = new $handler( $title, $params );
-			} else {
-				$job = null;
-			}
+			$job = new $class( $title, $params );
+			$job->command = $command;
 
-			if ( $job instanceof Job ) {
-				$job->command = $command;
-				return $job;
-			} else {
-				throw new InvalidArgumentException( "Cannot instantiate job '$command': bad spec!" );
-			}
+			return $job;
 		}
 
 		throw new InvalidArgumentException( "Invalid job command '{$command}'" );

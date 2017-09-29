@@ -452,35 +452,6 @@ class PostgresUpdater extends DatabaseUpdater {
 			[ 'addPgIndex', 'externallinks', 'el_from_index_60', '( el_from, el_index_60, el_id )' ],
 			[ 'addPgField', 'user_groups', 'ug_expiry', "TIMESTAMPTZ NULL" ],
 			[ 'addPgIndex', 'user_groups', 'user_groups_expiry', '( ug_expiry )' ],
-
-			// 1.30
-			[ 'modifyField', 'image', 'img_media_type', 'patch-add-3d.sql' ],
-			[ 'setDefault', 'revision', 'rev_comment', '' ],
-			[ 'changeNullableField', 'revision', 'rev_comment', 'NOT NULL', true ],
-			[ 'setDefault', 'archive', 'ar_comment', '' ],
-			[ 'changeNullableField', 'archive', 'ar_comment', 'NOT NULL', true ],
-			[ 'addPgField', 'archive', 'ar_comment_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'ipblocks', 'ipb_reason', '' ],
-			[ 'addPgField', 'ipblocks', 'ipb_reason_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'image', 'img_description', '' ],
-			[ 'setDefault', 'oldimage', 'oi_description', '' ],
-			[ 'changeNullableField', 'oldimage', 'oi_description', 'NOT NULL', true ],
-			[ 'addPgField', 'oldimage', 'oi_description_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'filearchive', 'fa_deleted_reason', '' ],
-			[ 'changeNullableField', 'filearchive', 'fa_deleted_reason', 'NOT NULL', true ],
-			[ 'addPgField', 'filearchive', 'fa_deleted_reason_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'filearchive', 'fa_description', '' ],
-			[ 'addPgField', 'filearchive', 'fa_description_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'recentchanges', 'rc_comment', '' ],
-			[ 'changeNullableField', 'recentchanges', 'rc_comment', 'NOT NULL', true ],
-			[ 'addPgField', 'recentchanges', 'rc_comment_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'logging', 'log_comment', '' ],
-			[ 'changeNullableField', 'logging', 'log_comment', 'NOT NULL', true ],
-			[ 'addPgField', 'logging', 'log_comment_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'setDefault', 'protected_titles', 'pt_reason', '' ],
-			[ 'changeNullableField', 'protected_titles', 'pt_reason', 'NOT NULL', true ],
-			[ 'addPgField', 'protected_titles', 'pt_reason_id', 'INTEGER NOT NULL DEFAULT 0' ],
-			[ 'addTable', 'comment', 'patch-comment-table.sql' ],
 		];
 	}
 
@@ -780,15 +751,15 @@ END;
 	}
 
 	protected function setDefault( $table, $field, $default ) {
+
 		$info = $this->db->fieldInfo( $table, $field );
 		if ( $info->defaultValue() !== $default ) {
 			$this->output( "Changing '$table.$field' default value\n" );
-			$this->db->query( "ALTER TABLE $table ALTER $field SET DEFAULT "
-				. $this->db->addQuotes( $default ) );
+			$this->db->query( "ALTER TABLE $table ALTER $field SET DEFAULT " . $default );
 		}
 	}
 
-	protected function changeNullableField( $table, $field, $null, $update = false ) {
+	protected function changeNullableField( $table, $field, $null ) {
 		$fi = $this->db->fieldInfo( $table, $field );
 		if ( is_null( $fi ) ) {
 			$this->output( "...ERROR: expected column $table.$field to exist\n" );
@@ -798,9 +769,6 @@ END;
 			# # It's NULL - does it need to be NOT NULL?
 			if ( 'NOT NULL' === $null ) {
 				$this->output( "Changing '$table.$field' to not allow NULLs\n" );
-				if ( $update ) {
-					$this->db->query( "UPDATE $table SET $field = DEFAULT WHERE $field IS NULL" );
-				}
 				$this->db->query( "ALTER TABLE $table ALTER $field SET NOT NULL" );
 			} else {
 				$this->output( "...column '$table.$field' is already set as NULL\n" );

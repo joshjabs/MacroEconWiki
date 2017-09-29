@@ -52,7 +52,7 @@ class HTMLCheckField extends HTMLFormField {
 			$value = !$value;
 		}
 
-		$attr = $this->getTooltipAndAccessKeyOOUI();
+		$attr = $this->getTooltipAndAccessKey();
 		$attr['id'] = $this->mID;
 		$attr['name'] = $this->mName;
 

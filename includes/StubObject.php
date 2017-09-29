@@ -55,6 +55,8 @@ class StubObject {
 	protected $params;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param string $global Name of the global variable.
 	 * @param string|callable $class Name of the class of the real object
 	 *                               or a factory function to call
@@ -86,7 +88,7 @@ class StubObject {
 	 * infinite loop when unstubbing an object or to avoid reference parameter
 	 * breakage.
 	 *
-	 * @param object &$obj Object to check.
+	 * @param object $obj Object to check.
 	 * @return void
 	 */
 	public static function unstub( &$obj ) {

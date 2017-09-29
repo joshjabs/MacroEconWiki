@@ -28,6 +28,7 @@ class WatchedItemIntegrationTest extends MediaWikiTestCase {
 	}
 
 	public function testWatchAndUnWatchItem() {
+
 		$user = $this->getUser();
 		$title = Title::newFromText( 'WatchedItemIntegrationTestPage' );
 		// Cleanup after previous tests

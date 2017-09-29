@@ -34,7 +34,7 @@
  * format (protect, delete, move, etc), and the just-do-something format (watch, rollback,
  * patrol, etc). The FormAction and FormlessAction classes represent these two groups.
  */
-abstract class Action implements MessageLocalizer {
+abstract class Action {
 
 	/**
 	 * Page on which we're performing the action
@@ -151,7 +151,7 @@ abstract class Action implements MessageLocalizer {
 			return 'view';
 		}
 
-		$action = self::factory( $actionName, $context->getWikiPage(), $context );
+		$action = Action::factory( $actionName, $context->getWikiPage(), $context );
 		if ( $action instanceof Action ) {
 			return $action->getName();
 		}
@@ -253,12 +253,14 @@ abstract class Action implements MessageLocalizer {
 	 *
 	 * @return Message
 	 */
-	final public function msg( $key ) {
+	final public function msg() {
 		$params = func_get_args();
 		return call_user_func_array( [ $this->getContext(), 'msg' ], $params );
 	}
 
 	/**
+	 * Constructor.
+	 *
 	 * Only public since 1.21
 	 *
 	 * @param Page $page
@@ -388,7 +390,7 @@ abstract class Action implements MessageLocalizer {
 	public function addHelpLink( $to, $overrideBaseUrl = false ) {
 		global $wgContLang;
 		$msg = wfMessage( $wgContLang->lc(
-			self::getActionName( $this->getContext() )
+			Action::getActionName( $this->getContext() )
 			) . '-helppage' );
 
 		if ( !$msg->isDisabled() ) {

@@ -11,8 +11,7 @@
 			"아라",
 			"Matma Rex",
 			"Macofe",
-			"Stephanecbisson",
-			"Yeniesil"
+			"Stephanecbisson"
 		]
 	},
 	"tog-underline": "በመያያዣ ስር አስምር",
@@ -820,7 +819,6 @@
 	"recentchanges-label-bot": "ይኸው ለውጥ በሎሌ ተደረገ።",
 	"recentchanges-label-unpatrolled": "ይህ እርማት ገና አልተገመገመም",
 	"recentchanges-legend-newpage": "$1 - አዲስ ገጽ",
-	"rcfilters-filtergroup-lastRevision": "የመጨረሻ ክለሳ",
 	"rcnotefrom": "ከ'''$2''' ጀምሮ የተቀየሩት ገጾች (እስከ '''$1''' ድረስ) ክዚህ በታች ይታያሉ።",
 	"rclistfrom": "(ከ $3 $2 ጀምሮ አዲስ ለውጦቹን ለማየት)",
 	"rcshowhideminor": "ጥቃቅን ለውጦች $1",

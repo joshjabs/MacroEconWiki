@@ -25,7 +25,6 @@
  * @file
  */
 use MediaWiki\Logger\LoggerFactory;
-use MediaWiki\MediaWikiServices;
 
 /**
  * API interface for page purging
@@ -99,7 +98,7 @@ class ApiPurge extends ApiBase {
 						$r['linkupdate'] = true;
 
 						if ( $enableParserCache ) {
-							$pcache = MediaWikiServices::getInstance()->getParserCache();
+							$pcache = ParserCache::singleton();
 							$pcache->save( $p_result, $page, $popts );
 						}
 					}

@@ -248,6 +248,7 @@ class ApiQueryBasicTest extends ApiQueryTestBase {
 	 * Test basic lists
 	 */
 	public function testAllTogether() {
+
 		// All props together
 		$this->check( $this->merge(
 			self::$links,

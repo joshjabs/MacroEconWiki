@@ -469,6 +469,7 @@ class MemcachedClient {
 	 * @return mixed
 	 */
 	public function get( $key, &$casToken = null ) {
+
 		if ( $this->_debug ) {
 			$this->_debugprint( "get($key)" );
 		}
@@ -1113,13 +1114,9 @@ class MemcachedClient {
 		if ( $this->_debug ) {
 			$this->_debugprint( sprintf( "%s %s (%s)", $cmd, $key, $line ) );
 		}
-		if ( $line === "STORED" ) {
-			return true;
-		} elseif ( $line === "NOT_STORED" && $cmd === "set" ) {
-			// "Not stored" is always used as the mcrouter response with AllAsyncRoute
+		if ( $line == "STORED" ) {
 			return true;
 		}
-
 		return false;
 	}
 

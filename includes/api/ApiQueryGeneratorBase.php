@@ -93,9 +93,12 @@ abstract class ApiQueryGeneratorBase extends ApiQueryBase {
 		}
 	}
 
-	/** @inheritDoc */
+	/**
+	 * @see ApiBase::getHelpFlags()
+	 *
+	 * Corresponding messages: api-help-flag-generator
+	 */
 	protected function getHelpFlags() {
-		// Corresponding messages: api-help-flag-generator
 		$flags = parent::getHelpFlags();
 		$flags[] = 'generator';
 		return $flags;

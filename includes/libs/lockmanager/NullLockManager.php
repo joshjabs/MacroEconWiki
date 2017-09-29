@@ -19,6 +19,7 @@
  *
  * @file
  * @ingroup LockManager
+ * @author Aaron Schulz
  */
 
 /**

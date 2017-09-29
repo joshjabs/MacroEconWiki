@@ -60,6 +60,7 @@ class InterwikiLookupAdapter implements InterwikiLookup {
 	 * @return bool Whether it exists
 	 */
 	public function isValidInterwiki( $prefix ) {
+
 		return array_key_exists( $prefix, $this->getInterwikiMap() );
 	}
 
@@ -86,20 +87,16 @@ class InterwikiLookupAdapter implements InterwikiLookup {
 	 * See InterwikiLookup::getAllPrefixes
 	 *
 	 * @param string|null $local If set, limits output to local/non-local interwikis
-	 * @return array[] interwiki rows
+	 * @return string[] List of prefixes
 	 */
 	public function getAllPrefixes( $local = null ) {
+		if ( $local === null ) {
+			return array_keys( $this->getInterwikiMap() );
+		}
 		$res = [];
 		foreach ( $this->getInterwikiMap() as $interwikiId => $interwiki ) {
-			if ( $local === null || $interwiki->isLocal() === $local ) {
-				$res[] = [
-					'iw_prefix' => $interwikiId,
-					'iw_url' => $interwiki->getURL(),
-					'iw_api' => $interwiki->getAPI(),
-					'iw_wikiid' => $interwiki->getWikiID(),
-					'iw_local' => $interwiki->isLocal(),
-					'iw_trans' => $interwiki->isTranscludable(),
-				];
+			if ( $interwiki->isLocal() === $local ) {
+				$res[] = $interwikiId;
 			}
 		}
 		return $res;

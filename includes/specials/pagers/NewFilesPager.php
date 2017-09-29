@@ -24,7 +24,7 @@
  */
 use MediaWiki\MediaWikiServices;
 
-class NewFilesPager extends RangeChronologicalPager {
+class NewFilesPager extends ReverseChronologicalPager {
 
 	/**
 	 * @var ImageGalleryBase
@@ -41,20 +41,11 @@ class NewFilesPager extends RangeChronologicalPager {
 	 * @param FormOptions $opts
 	 */
 	function __construct( IContextSource $context, FormOptions $opts ) {
-		parent::__construct( $context );
-
 		$this->opts = $opts;
+
 		$this->setLimit( $opts->getValue( 'limit' ) );
 
-		$startTimestamp = '';
-		$endTimestamp = '';
-		if ( $opts->getValue( 'start' ) ) {
-			$startTimestamp = $opts->getValue( 'start' ) . ' 00:00:00';
-		}
-		if ( $opts->getValue( 'end' ) ) {
-			$endTimestamp = $opts->getValue( 'end' ) . ' 23:59:59';
-		}
-		$this->getDateRangeCond( $startTimestamp, $endTimestamp );
+		parent::__construct( $context );
 	}
 
 	function getQueryInfo() {
@@ -72,20 +63,6 @@ class NewFilesPager extends RangeChronologicalPager {
 			} else {
 				$conds['img_user_text'] = $user;
 			}
-		}
-
-		if ( $opts->getValue( 'newbies' ) ) {
-			// newbie = most recent 1% of users
-			$dbr = wfGetDB( DB_REPLICA );
-			$max = $dbr->selectField( 'user', 'max(user_id)', false, __METHOD__ );
-			$conds[] = 'img_user >' . (int)( $max - $max / 100 );
-
-			// there's no point in looking for new user activity in a far past;
-			// beyond a certain point, we'd just end up scanning the rest of the
-			// table even though the users we're looking for didn't yet exist...
-			// see T140537, (for ContribsPages, but similar to this)
-			$conds[] = 'img_timestamp > ' .
-				$dbr->addQuotes( $dbr->timestamp( wfTimestamp() - 30 * 24 * 60 * 60 ) );
 		}
 
 		if ( !$opts->getValue( 'showbots' ) ) {
@@ -124,10 +101,6 @@ class NewFilesPager extends RangeChronologicalPager {
 			// It sometimes decides to query `recentchanges` first and filesort the result set later
 			// to get the right ordering. T124205 / https://mariadb.atlassian.net/browse/MDEV-8880
 			$options[] = 'STRAIGHT_JOIN';
-		}
-
-		if ( $opts->getValue( 'mediatype' ) ) {
-			$conds['img_media_type'] = $opts->getValue( 'mediatype' );
 		}
 
 		$likeVal = $opts->getValue( 'like' );

@@ -118,11 +118,11 @@
 	function setGlobalMapValue( map, key, value ) {
 		map.values[ key ] = value;
 		log.deprecate(
-			window,
-			key,
-			value,
-			// Deprecation notice for mw.config globals (T58550, T72470)
-			map === mw.config && 'Use mw.config instead.'
+				window,
+				key,
+				value,
+				// Deprecation notice for mw.config globals (T58550, T72470)
+				map === mw.config && 'Use mw.config instead.'
 		);
 	}
 
@@ -625,7 +625,7 @@
 		 * @param {Function} callback
 		 */
 		trackUnsubscribe: function ( callback ) {
-			trackHandlers = trackHandlers.filter( function ( fns ) {
+			trackHandlers = $.grep( trackHandlers, function ( fns ) {
 				if ( fns[ 1 ] === callback ) {
 					trackCallbacks.remove( fns[ 0 ] );
 					// Ensure the tuple is removed to avoid holding on to closures
@@ -754,7 +754,6 @@
 			 *     is used)
 			 *   - load-callback: exception thrown by user callback
 			 *   - module-execute: exception thrown by module code
-			 *   - resolve: failed to sort dependencies for a module in mw.loader.load
 			 *   - store-eval: could not evaluate module code cached in localStorage
 			 *   - store-localstorage-init: localStorage or JSON parse error in mw.loader.store.init
 			 *   - store-localstorage-json: JSON conversion error in mw.loader.store.set
@@ -1171,33 +1170,6 @@
 			}
 
 			/**
-			 * Like #resolve(), except it will silently ignore modules that
-			 * are missing or have missing dependencies.
-			 *
-			 * @private
-			 * @param {string[]} modules Array of string module names
-			 * @return {Array} List of dependencies.
-			 */
-			function resolveStubbornly( modules ) {
-				var i, saved, resolved = [];
-				for ( i = 0; i < modules.length; i++ ) {
-					saved = resolved.slice();
-					try {
-						sortDependencies( modules[ i ], resolved );
-					} catch ( err ) {
-						// This module is unknown or has unknown dependencies.
-						// Undo any incomplete resolutions made and keep going.
-						resolved = saved;
-						mw.track( 'resourceloader.exception', {
-							exception: err,
-							source: 'resolve'
-						} );
-					}
-				}
-				return resolved;
-			}
-
-			/**
 			 * Load and execute a script.
 			 *
 			 * @private
@@ -1298,7 +1270,7 @@
 				registry[ module ].state = 'executing';
 
 				runScript = function () {
-					var script, markModuleReady, nestedAddScript;
+					var script, markModuleReady, nestedAddScript, implicitDependencies, implicitWait;
 
 					script = registry[ module ].script;
 					markModuleReady = function () {
@@ -1319,33 +1291,47 @@
 						} );
 					};
 
-					try {
-						if ( Array.isArray( script ) ) {
-							nestedAddScript( script, markModuleReady, 0 );
-						} else if ( typeof script === 'function' ) {
-							// Pass jQuery twice so that the signature of the closure which wraps
-							// the script can bind both '$' and 'jQuery'.
-							script( $, $, mw.loader.require, registry[ module ].module );
-							markModuleReady();
+					implicitDependencies = [];
 
-						} else if ( typeof script === 'string' ) {
-							// Site and user modules are legacy scripts that run in the global scope.
-							// This is transported as a string instead of a function to avoid needing
-							// to use string manipulation to undo the function wrapper.
-							$.globalEval( script );
-							markModuleReady();
-
-						} else {
-							// Module without script
-							markModuleReady();
-						}
-					} catch ( e ) {
-						// Use mw.track instead of mw.log because these errors are common in production mode
-						// (e.g. undefined variable), and mw.log is only enabled in debug mode.
-						registry[ module ].state = 'error';
-						mw.track( 'resourceloader.exception', { exception: e, module: module, source: 'module-execute' } );
-						handlePending( module );
+					if ( module === 'user' ) {
+						// Implicit dependency on the site module. Not real dependency because
+						// it should run after 'site' regardless of whether it succeeds or fails.
+						implicitDependencies.push( 'site' );
 					}
+
+					implicitWait = implicitDependencies.length ?
+						mw.loader.using( implicitDependencies ) :
+						$.Deferred().resolve();
+
+					implicitWait.always( function () {
+						try {
+							if ( Array.isArray( script ) ) {
+								nestedAddScript( script, markModuleReady, 0 );
+							} else if ( typeof script === 'function' ) {
+								// Pass jQuery twice so that the signature of the closure which wraps
+								// the script can bind both '$' and 'jQuery'.
+								script( $, $, mw.loader.require, registry[ module ].module );
+								markModuleReady();
+
+							} else if ( typeof script === 'string' ) {
+								// Site and user modules are legacy scripts that run in the global scope.
+								// This is transported as a string instead of a function to avoid needing
+								// to use string manipulation to undo the function wrapper.
+								$.globalEval( script );
+								markModuleReady();
+
+							} else {
+								// Module without script
+								markModuleReady();
+							}
+						} catch ( e ) {
+							// Use mw.track instead of mw.log because these errors are common in production mode
+							// (e.g. undefined variable), and mw.log is only enabled in debug mode.
+							registry[ module ].state = 'error';
+							mw.track( 'resourceloader.exception', { exception: e, module: module, source: 'module-execute' } );
+							handlePending( module );
+						}
+					} );
 				};
 
 				// Add localizations to message system
@@ -1365,13 +1351,7 @@
 						// cssHandlesRegistered ensures we don't take off too soon, e.g. when
 						// one of the cssHandles is fired while we're still creating more handles.
 						if ( cssHandlesRegistered && pending === 0 && runScript ) {
-							if ( module === 'user' ) {
-								// Implicit dependency on the site module. Not real dependency because
-								// it should run after 'site' regardless of whether it succeeds or fails.
-								mw.loader.using( [ 'site' ] ).always( runScript );
-							} else {
-								runScript();
-							}
+							runScript();
 							runScript = undefined; // Revoke
 						}
 					};
@@ -1465,7 +1445,7 @@
 				if ( ready !== undefined || error !== undefined ) {
 					jobs.push( {
 						// Narrow down the list to modules that are worth waiting for
-						dependencies: dependencies.filter( function ( module ) {
+						dependencies: $.grep( dependencies, function ( module ) {
 							var state = mw.loader.getState( module );
 							return state === 'registered' || state === 'loaded' || state === 'loading' || state === 'executing';
 						} ),
@@ -1474,7 +1454,7 @@
 					} );
 				}
 
-				dependencies.forEach( function ( module ) {
+				$.each( dependencies, function ( idx, module ) {
 					var state = mw.loader.getState( module );
 					// Only queue modules that are still in the initial 'registered' state
 					// (not ones already loading, ready or error).
@@ -1499,7 +1479,9 @@
 					a = [];
 
 				for ( key in o ) {
-					a.push( key );
+					if ( hasOwn.call( o, key ) ) {
+						a.push( key );
+					}
 				}
 				a.sort();
 				for ( key = 0; key < a.length; key++ ) {
@@ -1536,9 +1518,10 @@
 			 * @param {string} sourceLoadScript URL of load.php
 			 */
 			function doRequest( moduleMap, currReqBase, sourceLoadScript ) {
-				// Optimisation: Inherit (Object.create), not copy ($.extend)
-				var query = Object.create( currReqBase );
-				query.modules = buildModulesString( moduleMap );
+				var query = $.extend(
+					{ modules: buildModulesString( moduleMap ) },
+					currReqBase
+				);
 				query = sortQuery( query );
 				addScript( sourceLoadScript + '?' + $.param( query ) );
 			}
@@ -1627,10 +1610,9 @@
 						// modules for this group from this source.
 						modules = splits[ source ][ group ];
 
-						// Optimisation: Inherit (Object.create), not copy ($.extend)
-						currReqBase = Object.create( reqBase );
-						currReqBase.version = getCombinedVersion( modules );
-
+						currReqBase = $.extend( {
+							version: getCombinedVersion( modules )
+						}, reqBase );
 						// For user modules append a user name to the query string.
 						if ( group === 'user' && mw.config.get( 'wgUserName' ) !== null ) {
 							currReqBase.user = mw.config.get( 'wgUserName' );
@@ -1782,7 +1764,7 @@
 					if ( mw.loader.store.enabled ) {
 						implementations = [];
 						sourceModules = [];
-						batch = batch.filter( function ( module ) {
+						batch = $.grep( batch, function ( module ) {
 							var implementation = mw.loader.store.get( module );
 							if ( implementation ) {
 								implementations.push( implementation );
@@ -1807,7 +1789,7 @@
 
 							mw.track( 'resourceloader.exception', { exception: err, source: 'store-eval' } );
 							// Re-add the failed ones that are still pending back to the batch
-							failed = sourceModules.filter( function ( module ) {
+							failed = $.grep( sourceModules, function ( module ) {
 								return registry[ module ].state === 'loading';
 							} );
 							batchRequest( failed );
@@ -2030,15 +2012,6 @@
 				/**
 				 * Load an external script or one or more modules.
 				 *
-				 * This method takes a list of unrelated modules. Use cases:
-				 *
-				 * - A web page will be composed of many different widgets. These widgets independently
-				 *   queue their ResourceLoader modules (`OutputPage::addModules()`). If any of them
-				 *   have problems, or are no longer known (e.g. cached HTML), the other modules
-				 *   should still be loaded.
-				 * - This method is used for preloading, which must not throw. Later code that
-				 *   calls #using() will handle the error.
-				 *
 				 * @param {string|Array} modules Either the name of a module, array of modules,
 				 *  or a URL of an external script or style
 				 * @param {string} [type='text/javascript'] MIME type to use if calling with a URL of an
@@ -2070,19 +2043,23 @@
 						modules = [ modules ];
 					}
 
-					// Filter out top-level modules that are unknown or failed to load before.
-					filtered = modules.filter( function ( module ) {
+					// Filter out undefined modules, otherwise resolve() will throw
+					// an exception for trying to load an undefined module.
+					// Undefined modules are acceptable here in load(), because load() takes
+					// an array of unrelated modules, whereas the modules passed to
+					// using() are related and must all be loaded.
+					filtered = $.grep( modules, function ( module ) {
 						var state = mw.loader.getState( module );
-						return state !== 'error' && state !== 'missing';
+						return state !== null && state !== 'error' && state !== 'missing';
 					} );
-					// Resolve remaining list using the known dependency tree.
-					// This also filters out modules with unknown dependencies. (T36853)
-					filtered = resolveStubbornly( filtered );
-					// If all modules are ready, or if any modules have errors, nothing to be done.
-					if ( allReady( filtered ) || anyFailed( filtered ) ) {
+
+					if ( filtered.length === 0 ) {
 						return;
 					}
-					if ( filtered.length === 0 ) {
+					// Resolve entire dependency map
+					filtered = resolve( filtered );
+					// If all modules are ready, or if any modules have errors, nothing to be done.
+					if ( allReady( filtered ) || anyFailed( filtered ) ) {
 						return;
 					}
 					// Some modules are not yet ready, add to module load queue.
@@ -2123,7 +2100,10 @@
 				 *  in the registry.
 				 */
 				getVersion: function ( module ) {
-					return hasOwn.call( registry, module ) ? registry[ module ].version : null;
+					if ( !hasOwn.call( registry, module ) || registry[ module ].version === undefined ) {
+						return null;
+					}
+					return registry[ module ].version;
 				},
 
 				/**
@@ -2134,7 +2114,10 @@
 				 *  in the registry.
 				 */
 				getState: function ( module ) {
-					return hasOwn.call( registry, module ) ? registry[ module ].state : null;
+					if ( !hasOwn.call( registry, module ) || registry[ module ].state === undefined ) {
+						return null;
+					}
+					return registry[ module ].state;
 				},
 
 				/**
@@ -2745,10 +2728,11 @@
 			msg += ( e ? ':' : '.' );
 			console.log( msg );
 
-			// If we have an exception object, log it to the warning channel to trigger
-			// proper stacktraces in browsers that support it.
-			if ( e && console.warn ) {
-				console.warn( String( e ), e );
+			// If we have an exception object, log it to the error channel to trigger
+			// proper stacktraces in browsers that support it. No fallback as we have
+			// no browsers that don't support error(), but do support log().
+			if ( e && console.error ) {
+				console.error( String( e ), e );
 			}
 		}
 		/* eslint-enable no-console */
@@ -2767,7 +2751,7 @@
 	$( function () {
 		var loading, modules;
 
-		modules = mw.loader.getModuleNames().filter( function ( module ) {
+		modules = $.grep( mw.loader.getModuleNames(), function ( module ) {
 			return mw.loader.getState( module ) === 'loading';
 		} );
 		// We only need a callback, not any actual module. First try a single using()

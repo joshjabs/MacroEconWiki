@@ -47,6 +47,8 @@ class CliInstaller extends Installer {
 	];
 
 	/**
+	 * Constructor.
+	 *
 	 * @param string $siteName
 	 * @param string $admin
 	 * @param array $option
@@ -108,7 +110,7 @@ class CliInstaller extends Installer {
 		}
 
 		// Set up the default skins
-		$skins = array_keys( $this->findExtensions( 'skins' ) );
+		$skins = $this->findExtensions( 'skins' );
 		$this->setVar( '_Skins', $skins );
 
 		if ( $skins ) {
@@ -178,7 +180,7 @@ class CliInstaller extends Installer {
 
 		$text = preg_replace( '/<a href="(.*?)".*?>(.*?)<\/a>/', '$2 &lt;$1&gt;', $text );
 
-		return Sanitizer::stripAllTags( $text );
+		return html_entity_decode( strip_tags( $text ), ENT_QUOTES );
 	}
 
 	/**

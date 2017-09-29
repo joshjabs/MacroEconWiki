@@ -96,10 +96,10 @@
 	 *
 	 * @deprecated since 1.26
 	 */
-	[ 'write', 'writeln' ].forEach( function ( method ) {
+	$.each( [ 'write', 'writeln' ], function ( idx, method ) {
 		mw.log.deprecate( document, method, function () {
 			$( 'body' ).append( $.parseHTML( Array.prototype.join.call( arguments, '' ) ) );
-		}, 'Use jQuery or mw.loader.load instead.', 'document.' + method );
+		}, 'Use jQuery or mw.loader.load instead.' );
 	} );
 
 }( mediaWiki, jQuery ) );

@@ -40,7 +40,6 @@ class GlobalVarConfigTest extends MediaWikiTestCase {
 
 	/**
 	 * @covers GlobalVarConfig::has
-	 * @covers GlobalVarConfig::hasWithPrefix
 	 */
 	public function testHas() {
 		$this->maybeStashGlobal( 'wgGlobalVarConfigTestHas' );
@@ -73,12 +72,12 @@ class GlobalVarConfigTest extends MediaWikiTestCase {
 	}
 
 	/**
-	 * @dataProvider provideGet
-	 * @covers GlobalVarConfig::get
-	 * @covers GlobalVarConfig::getWithPrefix
 	 * @param string $name
 	 * @param string $prefix
 	 * @param string $expected
+	 * @dataProvider provideGet
+	 * @covers GlobalVarConfig::get
+	 * @covers GlobalVarConfig::getWithPrefix
 	 */
 	public function testGet( $name, $prefix, $expected ) {
 		$config = new GlobalVarConfig( $prefix );

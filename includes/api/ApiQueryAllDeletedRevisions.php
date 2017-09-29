@@ -2,7 +2,7 @@
 /**
  * Created on Oct 3, 2014
  *
- * Copyright © 2014 Wikimedia Foundation and contributors
+ * Copyright © 2014 Brad Jorsch "bjorsch@wikimedia.org"
  *
  * Heavily based on ApiQueryDeletedrevs,
  * Copyright © 2007 Roan Kattouw "<Firstname>.<Lastname>@gmail.com"

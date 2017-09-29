@@ -18,6 +18,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  *
  * @file
+ * @author Aaron Schulz
  */
 
 /**
@@ -35,7 +36,7 @@ class HashRing {
 	protected $liveRing;
 	/** @var Array (location => UNIX timestamp) */
 	protected $ejectionExpiries = [];
-	/** @var int UNIX timestamp */
+	/** @var integer UNIX timestamp */
 	protected $ejectionNextExpiry = INF;
 
 	const RING_SIZE = 268435456; // 2^28
@@ -93,7 +94,7 @@ class HashRing {
 	 * Get the location of an item on the ring, as well as the next locations
 	 *
 	 * @param string $item
-	 * @param int $limit Maximum number of locations to return
+	 * @param integer $limit Maximum number of locations to return
 	 * @return array List of locations
 	 */
 	public function getLocations( $item, $limit ) {
@@ -116,12 +117,11 @@ class HashRing {
 		// If more locations are requested, wrap-around and keep adding them
 		reset( $this->ring );
 		while ( count( $locations ) < $limit ) {
-			$location = key( $this->ring );
+			list( $location, ) = each( $this->ring );
 			if ( $location === $primaryLocation ) {
 				break; // don't go in circles
 			}
 			$locations[] = $location;
-			next( $this->ring );
 		}
 
 		return $locations;
@@ -153,7 +153,7 @@ class HashRing {
 	 * Remove a location from the "live" hash ring
 	 *
 	 * @param string $location
-	 * @param int $ttl Seconds
+	 * @param integer $ttl Seconds
 	 * @return bool Whether some non-ejected locations are left
 	 */
 	public function ejectFromLiveRing( $location, $ttl ) {
@@ -179,7 +179,7 @@ class HashRing {
 		if ( $this->liveRing === null || $this->ejectionNextExpiry <= $now ) {
 			$this->ejectionExpiries = array_filter(
 				$this->ejectionExpiries,
-				function ( $expiry ) use ( $now ) {
+				function( $expiry ) use ( $now ) {
 					return ( $expiry > $now );
 				}
 			);
@@ -219,7 +219,7 @@ class HashRing {
 	 * Get the location of an item on the "live" ring, as well as the next locations
 	 *
 	 * @param string $item
-	 * @param int $limit Maximum number of locations to return
+	 * @param integer $limit Maximum number of locations to return
 	 * @return array List of locations
 	 * @throws UnexpectedValueException
 	 */

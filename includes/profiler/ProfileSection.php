@@ -40,6 +40,5 @@ class ProfileSection {
 	 * @param string $name Name of the function to profile
 	 */
 	public function __construct( $name ) {
-		wfDeprecated( __CLASS__, '1.25' );
 	}
 }

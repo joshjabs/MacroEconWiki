@@ -18,6 +18,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  *
  * @file
+ * @author Brad Jorsch
  */
 
 /**
@@ -65,9 +66,9 @@ class ResourceLoaderJqueryMsgModule extends ResourceLoaderFileModule {
 	}
 
 	/**
-	 * @param ResourceLoaderContext $context
-	 * @return array
-	 */
+	* @param ResourceLoaderContext $context
+	* @return array
+	*/
 	public function getScriptURLsForDebug( ResourceLoaderContext $context ) {
 		// Bypass file module urls
 		return ResourceLoaderModule::getScriptURLsForDebug( $context );

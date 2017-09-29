@@ -23,6 +23,7 @@ namespace MediaWiki\Logger\Monolog;
 use AvroIODatumWriter;
 use AvroIOBinaryEncoder;
 use AvroIOTypeException;
+use AvroNamedSchemata;
 use AvroSchema;
 use AvroStringIO;
 use AvroValidator;
@@ -61,7 +62,7 @@ class AvroFormatter implements FormatterInterface {
 	protected $writer;
 
 	/**
-	 * @param array $schemas Map from Monolog channel to Avro schema.
+	 * @var array $schemas Map from Monolog channel to Avro schema.
 	 *  Each schema can be either the JSON string or decoded into PHP
 	 *  arrays.
 	 */
@@ -120,7 +121,7 @@ class AvroFormatter implements FormatterInterface {
 	/**
 	 * Get the writer for the named channel
 	 *
-	 * @param string $channel Name of the schema to fetch
+	 * @var string $channel Name of the schema to fetch
 	 * @return \AvroSchema|null
 	 */
 	protected function getSchema( $channel ) {
@@ -147,7 +148,7 @@ class AvroFormatter implements FormatterInterface {
 	/**
 	 * Get the writer for the named channel
 	 *
-	 * @param string $channel Name of the schema
+	 * @var string $channel Name of the schema
 	 * @return int|null
 	 */
 	public function getSchemaRevisionId( $channel ) {

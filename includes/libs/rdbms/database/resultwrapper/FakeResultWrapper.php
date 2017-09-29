@@ -9,7 +9,7 @@ use stdClass;
  * doesn't go anywhere near an actual database.
  */
 class FakeResultWrapper extends ResultWrapper {
-	/** @var stdClass[] $result */
+	/** @var $result stdClass[] */
 
 	/**
 	 * @param stdClass[] $rows
@@ -63,3 +63,4 @@ class FakeResultWrapper extends ResultWrapper {
 }
 
 class_alias( FakeResultWrapper::class, 'FakeResultWrapper' );
+

@@ -22,7 +22,6 @@
 /**
  * This class performs some operations related to tracking categories, such as creating
  * a list of all such categories.
- * @since 1.29
  */
 class TrackingCategories {
 	/** @var Config */

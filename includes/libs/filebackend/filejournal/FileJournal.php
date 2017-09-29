@@ -24,6 +24,7 @@
  *
  * @file
  * @ingroup FileJournal
+ * @author Aaron Schulz
  */
 
 /**

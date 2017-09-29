@@ -79,9 +79,9 @@ class BasicSearchResultSetWidget {
 					continue;
 				}
 				$out .=
-					"<h2 class='mw-search-interwiki-header mw-search-visualclear'>" .
+					"<p class='mw-search-interwiki-header mw-search-visualclear'>" .
 						$this->specialPage->msg( "search-interwiki-results-{$interwiki}" )->parse() .
-					"</h2>";
+					"</p>";
 				$out .= $this->renderResultSet( $results, $offset );
 			}
 		}

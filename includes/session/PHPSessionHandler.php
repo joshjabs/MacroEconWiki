@@ -145,7 +145,7 @@ class PHPSessionHandler implements \SessionHandlerInterface {
 	 * @private Use self::install().
 	 * @param SessionManager $manager
 	 * @param BagOStuff $store
-	 * @param LoggerInterface $logger
+	 * @param LoggerInterface $store
 	 */
 	public function setManager(
 		SessionManager $manager, BagOStuff $store, LoggerInterface $logger

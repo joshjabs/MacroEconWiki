@@ -69,7 +69,7 @@ class ParserTestTopLevelSuite extends PHPUnit_Framework_TestSuite {
 		if ( is_string( $flags ) ) {
 			$flags = self::CORE_ONLY;
 		}
-		global $IP;
+		global $wgParserTestFiles, $IP;
 
 		$mwTestDir = $IP . '/tests/';
 
@@ -81,16 +81,15 @@ class ParserTestTopLevelSuite extends PHPUnit_Framework_TestSuite {
 		$filesToTest = [];
 
 		# Filter out .txt files
-		$files = ParserTestRunner::getParserTestFiles();
-		foreach ( $files as $extName => $parserTestFile ) {
+		foreach ( $wgParserTestFiles as $parserTestFile ) {
 			$isCore = ( 0 === strpos( $parserTestFile, $mwTestDir ) );
 
 			if ( $isCore && $wantsCore ) {
 				self::debug( "included core parser tests: $parserTestFile" );
-				$filesToTest[$extName] = $parserTestFile;
+				$filesToTest[] = $parserTestFile;
 			} elseif ( !$isCore && $wantsRest ) {
 				self::debug( "included non core parser tests: $parserTestFile" );
-				$filesToTest[$extName] = $parserTestFile;
+				$filesToTest[] = $parserTestFile;
 			} else {
 				self::debug( "skipped parser tests: $parserTestFile" );
 			}
@@ -100,13 +99,12 @@ class ParserTestTopLevelSuite extends PHPUnit_Framework_TestSuite {
 
 		$testList = [];
 		$counter = 0;
-		foreach ( $filesToTest as $extensionName => $fileName ) {
-			if ( is_int( $extensionName ) ) {
-				// If there's no extension name because this is coming
-				// from the legacy global, then assume the next level directory
-				// is the extension name (e.g. extensions/FooBar/parserTests.txt).
-				$extensionName = basename( dirname( $fileName ) );
-			}
+		foreach ( $filesToTest as $fileName ) {
+			// Call the highest level directory the extension name.
+			// It may or may not actually be, but it should be close
+			// enough to cause there to be separate names for different
+			// things, which is good enough for our purposes.
+			$extensionName = basename( dirname( $fileName ) );
 			$testsName = $extensionName . '__' . basename( $fileName, '.txt' );
 			$parserTestClassName = ucfirst( $testsName );
 
@@ -155,6 +153,6 @@ class ParserTestTopLevelSuite extends PHPUnit_Framework_TestSuite {
 	 * @param string $msg Message to log
 	 */
 	protected static function debug( $msg ) {
-		wfDebugLog( 'tests-parser', wfGetCaller() . ' ' . $msg );
+		return wfDebugLog( 'tests-parser', wfGetCaller() . ' ' . $msg );
 	}
 }

@@ -115,11 +115,23 @@ class ImagePage extends Article {
 
 		if ( $this->getTitle()->getNamespace() == NS_FILE && $this->mPage->getFile()->getRedirected() ) {
 			if ( $this->getTitle()->getDBkey() == $this->mPage->getFile()->getName() || $diff !== null ) {
+				// mTitle is the same as the redirect target so ask Article
+				// to perform the redirect for us.
 				$request->setVal( 'diffonly', 'true' );
+				parent::view();
+				return;
+			} else {
+				// mTitle is not the same as the redirect target so it is
+				// probably the redirect page itself. Fake the redirect symbol
+				$out->setPageTitle( $this->getTitle()->getPrefixedText() );
+				$out->addHTML( $this->viewRedirect(
+					Title::makeTitle( NS_FILE, $this->mPage->getFile()->getName() ),
+					/* $appendSubtitle */ true,
+					/* $forceKnown */ true )
+				);
+				$this->mPage->doViewUpdates( $this->getContext()->getUser(), $this->getOldID() );
+				return;
 			}
-
-			parent::view();
-			return;
 		}
 
 		if ( $wgShowEXIF && $this->displayImg->exists() ) {
@@ -254,16 +266,15 @@ class ImagePage extends Article {
 		$r .= "<table id=\"mw_metadata\" class=\"mw_metadata\">\n";
 		foreach ( $metadata as $type => $stuff ) {
 			foreach ( $stuff as $v ) {
-				$class = str_replace( ' ', '_', $v['id'] );
+				# @todo FIXME: Why is this using escapeId for a class?!
+				$class = Sanitizer::escapeId( $v['id'] );
 				if ( $type == 'collapsed' ) {
 					// Handled by mediawiki.action.view.metadata module.
 					$class .= ' collapsable';
 				}
-				$r .= Html::rawElement( 'tr',
-					[ 'class' => $class ],
-					Html::rawElement( 'th', [], $v['name'] )
-						. Html::rawElement( 'td', [], $v['value'] )
-				);
+				$r .= "<tr class=\"$class\">\n";
+				$r .= "<th>{$v['name']}</th>\n";
+				$r .= "<td>{$v['value']}</td>\n</tr>";
 			}
 		}
 		$r .= "</table>\n</div>\n";
@@ -423,7 +434,7 @@ class ImagePage extends Article {
 					$count = $this->displayImg->pageCount();
 
 					if ( $page > 1 ) {
-						$label = $this->getContext()->msg( 'imgmultipageprev' )->text();
+						$label = $out->parse( $this->getContext()->msg( 'imgmultipageprev' )->text(), false );
 						// on the client side, this link is generated in ajaxifyPageNavigation()
 						// in the mediawiki.page.image.pagination module
 						$link = Linker::linkKnown(
@@ -483,7 +494,6 @@ class ImagePage extends Article {
 						Xml::openElement( 'form', $formParams ) .
 						Html::hidden( 'title', $this->getTitle()->getPrefixedDBkey() ) .
 						$this->getContext()->msg( 'imgmultigoto' )->rawParams( $select )->parse() .
-						$this->getContext()->msg( 'word-separator' )->escaped() .
 						Xml::submitButton( $this->getContext()->msg( 'imgmultigo' )->text() ) .
 						Xml::closeElement( 'form' ) .
 						"<hr />$thumb1\n$thumb2<br style=\"clear: both\" /></div></td></tr></table>"
@@ -621,8 +631,8 @@ EOT
 	/**
 	 * Make the text under the image to say what size preview
 	 *
-	 * @param array $params parameters for thumbnail
-	 * @param string $sizeLinkBigImagePreview HTML for the current size
+	 * @param $params array parameters for thumbnail
+	 * @param $sizeLinkBigImagePreview HTML for the current size
 	 * @return string HTML output
 	 */
 	private function getThumbPrevText( $params, $sizeLinkBigImagePreview ) {

@@ -37,6 +37,9 @@ class DatabaseOracle extends Database {
 	/** @var int The number of rows affected as an integer */
 	protected $mAffectedRows;
 
+	/** @var int */
+	private $mInsertId = null;
+
 	/** @var bool */
 	private $ignoreDupValOnIndex = false;
 
@@ -316,10 +319,12 @@ class DatabaseOracle extends Database {
 		return oci_field_name( $stmt, $n );
 	}
 
+	/**
+	 * This must be called after nextSequenceVal
+	 * @return null|int
+	 */
 	function insertId() {
-		$res = $this->query( "SELECT lastval_pkg.getLastval FROM dual" );
-		$row = $this->fetchRow( $res );
-		return is_null( $row[0] ) ? null : (int)$row[0];
+		return $this->mInsertId;
 	}
 
 	/**
@@ -553,9 +558,19 @@ class DatabaseOracle extends Database {
 	}
 
 	function nativeInsertSelect( $destTable, $srcTable, $varMap, $conds, $fname = __METHOD__,
-		$insertOptions = [], $selectOptions = [], $selectJoinConds = []
+		$insertOptions = [], $selectOptions = []
 	) {
 		$destTable = $this->tableName( $destTable );
+		if ( !is_array( $selectOptions ) ) {
+			$selectOptions = [ $selectOptions ];
+		}
+		list( $startOpts, $useIndex, $tailOpts, $ignoreIndex ) =
+			$this->makeSelectOptions( $selectOptions );
+		if ( is_array( $srcTable ) ) {
+			$srcTable = implode( ',', array_map( [ $this, 'tableName' ], $srcTable ) );
+		} else {
+			$srcTable = $this->tableName( $srcTable );
+		}
 
 		$sequenceData = $this->getSequenceData( $destTable );
 		if ( $sequenceData !== false &&
@@ -570,16 +585,13 @@ class DatabaseOracle extends Database {
 			$val = $val . ' field' . ( $i++ );
 		}
 
-		$selectSql = $this->selectSQLText(
-			$srcTable,
-			array_values( $varMap ),
-			$conds,
-			$fname,
-			$selectOptions,
-			$selectJoinConds
-		);
-
-		$sql = "INSERT INTO $destTable (" . implode( ',', array_keys( $varMap ) ) . ') ' . $selectSql;
+		$sql = "INSERT INTO $destTable (" . implode( ',', array_keys( $varMap ) ) . ')' .
+			" SELECT $startOpts " . implode( ',', $varMap ) .
+			" FROM $srcTable $useIndex $ignoreIndex ";
+		if ( $conds != '*' ) {
+			$sql .= ' WHERE ' . $this->makeList( $conds, LIST_AND );
+		}
+		$sql .= " $tailOpts";
 
 		if ( in_array( 'IGNORE', $insertOptions ) ) {
 			$this->ignoreDupValOnIndex = true;
@@ -642,6 +654,20 @@ class DatabaseOracle extends Database {
 		$name = $this->tableName( $name );
 
 		return preg_replace( '/.*\.(.*)/', '$1', $name );
+	}
+
+	/**
+	 * Return the next in a sequence, save the value for retrieval via insertId()
+	 *
+	 * @param string $seqName
+	 * @return null|int
+	 */
+	function nextSequenceValue( $seqName ) {
+		$res = $this->query( "SELECT $seqName.nextval FROM dual" );
+		$row = $this->fetchRow( $res );
+		$this->mInsertId = $row[0];
+
+		return $this->mInsertId;
 	}
 
 	/**

@@ -335,7 +335,8 @@
 					'X-Foo': 'Bar'
 				}
 			}
-		).then( function () {
+		)
+		.then( function () {
 			assert.equal( test.server.requests[ 0 ].requestHeaders[ 'X-Foo' ], 'Bar', 'Header sent' );
 
 			return api.postWithToken( 'csrf',
@@ -344,7 +345,8 @@
 					assert.ok( false, 'This parameter cannot be a callback' );
 				}
 			);
-		} ).then( function ( data ) {
+		} )
+		.then( function ( data ) {
 			assert.equal( data.example, 'quux' );
 
 			assert.equal( test.server.requests.length, 2, 'Request made' );

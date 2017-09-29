@@ -66,7 +66,6 @@ class BrokenRedirectsPage extends QueryPage {
 				'value' => 'p1.page_title',
 				'rd_namespace',
 				'rd_title',
-				'rd_fragment',
 			],
 			'conds' => [
 				// Exclude pages that don't exist locally as wiki pages,
@@ -103,7 +102,7 @@ class BrokenRedirectsPage extends QueryPage {
 	function formatResult( $skin, $result ) {
 		$fromObj = Title::makeTitle( $result->namespace, $result->title );
 		if ( isset( $result->rd_title ) ) {
-			$toObj = Title::makeTitle( $result->rd_namespace, $result->rd_title, $result->rd_fragment );
+			$toObj = Title::makeTitle( $result->rd_namespace, $result->rd_title );
 		} else {
 			$blinks = $fromObj->getBrokenLinksFrom(); # TODO: check for redirect, not for links
 			if ( $blinks ) {
@@ -140,7 +139,7 @@ class BrokenRedirectsPage extends QueryPage {
 				[ 'action' => 'edit' ]
 			);
 		}
-		$to = $linkRenderer->makeBrokenLink( $toObj, $toObj->getFullText() );
+		$to = $linkRenderer->makeBrokenLink( $toObj );
 		$arr = $this->getLanguage()->getArrow();
 
 		$out = $from . $this->msg( 'word-separator' )->escaped();

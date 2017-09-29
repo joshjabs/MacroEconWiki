@@ -23,7 +23,7 @@
 .mw-widgets-stashedFileWidget-info {
 	height: 2.4em;
 	background-color: #fff;
-	border: 1px solid #c8ccd1;
+	border: 1px solid #ccc;
 	border-radius: 2px;
 	width: 100%;
 	display: table-cell;
@@ -49,7 +49,7 @@
 			float: left;
 		}
 		> .mw-widgets-stashedFileWidget-fileType {
-			color: #72777d;
+			color: #888;
 			float: right;
 		}
 	}
@@ -57,31 +57,34 @@
 	> .oo-ui-indicatorElement-indicator,
 	> .oo-ui-iconElement-icon {
 		position: absolute;
-		top: 0;
-		height: 2.3em;
 	}
 
 	> .oo-ui-indicatorElement-indicator {
 		right: 0;
+		top: 0;
 		width: 0.9375em;
+		height: 2.3em;
 		margin-right: 0.775em;
 	}
 
 	> .oo-ui-iconElement-icon {
+		top: 0;
 		width: 1.875em;
+		height: 2.3em;
 		margin-left: 0.5em;
+		left: 0;
 	}
 
 	&.oo-ui-widget-disabled {
 		.mw-widgets-stashedFileWidget-info {
-			background-color: #eaecf0;
-			color: #72777d;
-			border-color: #c8ccd1;
+			color: #ccc;
 			text-shadow: 0 1px 1px #fff;
+			border-color: #ddd;
+			background-color: #f3f3f3;
 
 			> .oo-ui-iconElement-icon,
 			> .oo-ui-indicatorElement-indicator {
-				opacity: 0.15;
+				opacity: 0.2;
 			}
 		}
 	}
@@ -93,7 +96,7 @@
 	text-align: left;
 	padding: 0;
 	background-color: #fff;
-	border: 1px solid #c8ccd1;
+	border: 1px solid #ccc;
 	margin-bottom: 0.5em;
 	vertical-align: middle;
 	overflow: hidden;
@@ -112,7 +115,7 @@
 
 		> .mw-widgets-stashedFileWidget-noThumbnail-icon {
 			opacity: 0.4;
-			background-color: #c8ccd1;
+			background-color: #ccc;
 			height: 5.5em;
 			width: 5.5em;
 		}
@@ -129,7 +132,11 @@
 		> .mw-widgets-stashedFileWidget-label {
 			position: relative;
 
-			> .mw-widgets-stashedFileWidget-fileName,
+			> .mw-widgets-stashedFileWidget-fileName {
+				display: block;
+				float: none;
+			}
+
 			> .mw-widgets-stashedFileWidget-fileType {
 				display: block;
 				float: none;
@@ -150,7 +157,7 @@
 	}
 
 	.mw-widgets-stashedFileWidget-label {
-		color: #c8ccd1;
+		color: #ccc;
 		right: 0.5em;
 	}
 

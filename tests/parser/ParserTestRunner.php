@@ -28,24 +28,11 @@
 use Wikimedia\Rdbms\IDatabase;
 use MediaWiki\MediaWikiServices;
 use Wikimedia\ScopedCallback;
-use Wikimedia\TestingAccessWrapper;
 
 /**
  * @ingroup Testing
  */
 class ParserTestRunner {
-
-	/**
-	 * MediaWiki core parser test files, paths
-	 * will be prefixed with __DIR__ . '/'
-	 *
-	 * @var array
-	 */
-	private static $coreTestFiles = [
-		'parserTests.txt',
-		'extraParserTests.txt',
-	];
-
 	/**
 	 * @var bool $useTemporaryTables Use temporary tables for the temporary database
 	 */
@@ -159,48 +146,6 @@ class ParserTestRunner {
 		}
 	}
 
-	/**
-	 * Get list of filenames to extension and core parser tests
-	 *
-	 * @return array
-	 */
-	public static function getParserTestFiles() {
-		global $wgParserTestFiles;
-
-		// Add core test files
-		$files = array_map( function ( $item ) {
-			return __DIR__ . "/$item";
-		}, self::$coreTestFiles );
-
-		// Plus legacy global files
-		$files = array_merge( $files, $wgParserTestFiles );
-
-		// Auto-discover extension parser tests
-		$registry = ExtensionRegistry::getInstance();
-		foreach ( $registry->getAllThings() as $info ) {
-			$dir = dirname( $info['path'] ) . '/tests/parser';
-			if ( !file_exists( $dir ) ) {
-				continue;
-			}
-			$counter = 1;
-			$dirIterator = new RecursiveIteratorIterator(
-				new RecursiveDirectoryIterator( $dir )
-			);
-			foreach ( $dirIterator as $fileInfo ) {
-				/** @var SplFileInfo $fileInfo */
-				if ( substr( $fileInfo->getFilename(), -4 ) === '.txt' ) {
-					$name = $info['name'] . $counter;
-					while ( isset( $files[$name] ) ) {
-						$name = $info['name'] . '_' . $counter++;
-					}
-					$files[$name] = $fileInfo->getPathname();
-				}
-			}
-		}
-
-		return array_unique( $files );
-	}
-
 	public function getRecorder() {
 		return $this->recorder;
 	}
@@ -295,7 +240,7 @@ class ParserTestRunner {
 			'name' => 'nullLockManager',
 			'class' => 'NullLockManager',
 		] ];
-		$reset = function () {
+		$reset = function() {
 			LockManagerGroup::destroySingletons();
 		};
 		$setup[] = $reset;
@@ -320,10 +265,7 @@ class ParserTestRunner {
 		$setup['wgSVGConverters'] = [ 'null' => 'echo "1">$output' ];
 
 		// Fake constant timestamp
-		Hooks::register( 'ParserGetVariableValueTs', function ( &$parser, &$ts ) {
-			$ts = $this->getFakeTimestamp();
-			return true;
-		} );
+		Hooks::register( 'ParserGetVariableValueTs', 'ParserTestRunner::getFakeTimestamp' );
 		$teardown[] = function () {
 			Hooks::clear( 'ParserGetVariableValueTs' );
 		};
@@ -346,9 +288,8 @@ class ParserTestRunner {
 		MediaWikiServices::getInstance()->disableService( 'MediaHandlerFactory' );
 		MediaWikiServices::getInstance()->redefineService(
 			'MediaHandlerFactory',
-			function ( MediaWikiServices $services ) {
-				$handlers = $services->getMainConfig()->get( 'ParserTestMediaHandlers' );
-				return new MediaHandlerFactory( $handlers );
+			function() {
+				return new MockMediaHandlerFactory();
 			}
 		);
 		$teardown[] = function () {
@@ -483,11 +424,11 @@ class ParserTestRunner {
 	 * @see staticSetup
 	 *
 	 * @param array $teardown The snippet array
-	 * @param ScopedCallback|null $nextTeardown A ScopedCallback to consume
+	 * @param ScopedCallback|null A ScopedCallback to consume
 	 * @return ScopedCallback
 	 */
 	protected function createTeardownObject( $teardown, $nextTeardown = null ) {
-		return new ScopedCallback( function () use ( $teardown, $nextTeardown ) {
+		return new ScopedCallback( function() use ( $teardown, $nextTeardown ) {
 			// Schedule teardown snippets in reverse order
 			$teardown = array_reverse( $teardown );
 
@@ -518,8 +459,6 @@ class ParserTestRunner {
 	/**
 	 * Ensure a given setup stage has been done, throw an exception if it has
 	 * not.
-	 * @param string $funcName
-	 * @param string|null $funcName2
 	 */
 	protected function checkSetupDone( $funcName, $funcName2 = null ) {
 		if ( !$this->setupDone[$funcName]
@@ -534,7 +473,7 @@ class ParserTestRunner {
 	 * Determine whether a particular setup function has been run
 	 *
 	 * @param string $funcName
-	 * @return bool
+	 * @return boolean
 	 */
 	public function isSetupDone( $funcName ) {
 		return isset( $this->setupDone[$funcName] ) ? $this->setupDone[$funcName] : false;
@@ -702,8 +641,6 @@ class ParserTestRunner {
 	/**
 	 * Determine whether the current parser has the hooks registered in it
 	 * that are required by a file read by TestFileReader.
-	 * @param array $requirements
-	 * @return bool
 	 */
 	public function meetsRequirements( $requirements ) {
 		foreach ( $requirements as $requirement ) {
@@ -809,11 +746,6 @@ class ParserTestRunner {
 		$context = RequestContext::getMain();
 		$user = $context->getUser();
 		$options = ParserOptions::newFromContext( $context );
-		$options->setTimestamp( $this->getFakeTimestamp() );
-
-		if ( !isset( $opts['wrap'] ) ) {
-			$options->setWrapOutputClass( false );
-		}
 
 		if ( isset( $opts['tidy'] ) ) {
 			if ( !$this->tidySupport->isEnabled() ) {
@@ -837,7 +769,6 @@ class ParserTestRunner {
 
 		if ( isset( $opts['pst'] ) ) {
 			$out = $parser->preSaveTransform( $test['input'], $title, $user, $options );
-			$output = $parser->getOutput();
 		} elseif ( isset( $opts['msg'] ) ) {
 			$out = $parser->transformMsg( $test['input'], $options, $title );
 		} elseif ( isset( $opts['section'] ) ) {
@@ -886,12 +817,6 @@ class ParserTestRunner {
 					$out .= "cat=$name sort=$sortkey";
 				}
 			}
-		}
-
-		if ( isset( $output ) && isset( $opts['showflags'] ) ) {
-			$actualFlags = array_keys( TestingAccessWrapper::newFromObject( $output )->mFlags );
-			sort( $actualFlags );
-			$out .= "\nflags=" . join( ', ', $actualFlags );
 		}
 
 		ScopedCallback::consume( $teardownGuard );
@@ -1046,9 +971,6 @@ class ParserTestRunner {
 		$linkHolderBatchSize =
 			self::getOptionValue( 'wgLinkHolderBatchSize', $opts, 1000 );
 
-		// Default to fallback skin, but allow it to be overridden
-		$skin = self::getOptionValue( 'skin', $opts, 'fallback' );
-
 		$setup = [
 			'wgEnableUploads' => self::getOptionValue( 'wgEnableUploads', $opts, true ),
 			'wgLanguageCode' => $langCode,
@@ -1065,8 +987,6 @@ class ParserTestRunner {
 			// wgEnableMagicLinks={"ISBN":false, "PMID":false, "RFC":false}
 			'wgEnableMagicLinks' => self::getOptionValue( 'wgEnableMagicLinks', $opts, [] )
 				+ [ 'ISBN' => true, 'PMID' => true, 'RFC' => true ],
-			// Test with legacy encoding by default until HTML5 is very stable and default
-			'wgFragmentMode' => [ 'legacy' ],
 		];
 
 		if ( $config ) {
@@ -1120,23 +1040,10 @@ class ParserTestRunner {
 		$context = RequestContext::getMain();
 		$context->setUser( $user );
 		$context->setLanguage( $lang );
-		// And the skin!
-		$oldSkin = $context->getSkin();
-		$skinFactory = MediaWikiServices::getInstance()->getSkinFactory();
-		$context->setSkin( $skinFactory->makeSkin( $skin ) );
-		$context->setOutput( new OutputPage( $context ) );
-		$setup['wgOut'] = $context->getOutput();
-		$teardown[] = function () use ( $context, $oldSkin ) {
-			// Clear language conversion tables
-			$wrapper = TestingAccessWrapper::newFromObject(
-				$context->getLanguage()->getConverter()
-			);
-			$wrapper->reloadTables();
+		$teardown[] = function () use ( $context ) {
 			// Reset context to the restored globals
 			$context->setUser( $GLOBALS['wgUser'] );
 			$context->setLanguage( $GLOBALS['wgContLang'] );
-			$context->setSkin( $oldSkin );
-			$context->setOutput( $GLOBALS['wgOut'] );
 		};
 
 		$teardown[] = $this->executeSetupSnippets( $setup );
@@ -1151,7 +1058,7 @@ class ParserTestRunner {
 	 */
 	private function listTables() {
 		$tables = [ 'user', 'user_properties', 'user_former_groups', 'page', 'page_restrictions',
-			'protected_titles', 'revision', 'ip_changes', 'text', 'pagelinks', 'imagelinks',
+			'protected_titles', 'revision', 'text', 'pagelinks', 'imagelinks',
 			'categorylinks', 'templatelinks', 'externallinks', 'langlinks', 'iwlinks',
 			'site_stats', 'ipblocks', 'image', 'oldimage',
 			'recentchanges', 'watchlist', 'interwiki', 'logging', 'log_search',
@@ -1539,7 +1446,7 @@ class ParserTestRunner {
 	/**
 	 * Add articles to the test DB.
 	 *
-	 * @param array $articles Article info array from TestFileReader
+	 * @param $articles Article info array from TestFileReader
 	 */
 	public function addArticles( $articles ) {
 		global $wgContLang;
@@ -1604,15 +1511,12 @@ class ParserTestRunner {
 		// get a reference to the mock object.
 		MessageCache::singleton()->getParser();
 		$restore = $this->executeSetupSnippets( [ 'wgParser' => new ParserTestMockParser ] );
-		try {
-			$status = $page->doEditContent(
-				ContentHandler::makeContent( $text, $title ),
-				'',
-				EDIT_NEW | EDIT_INTERNAL
-			);
-		} finally {
-			$restore();
-		}
+		$status = $page->doEditContent(
+			ContentHandler::makeContent( $text, $title ),
+			'',
+			EDIT_NEW | EDIT_INTERNAL
+		);
+		$restore();
 
 		if ( !$status->isOK() ) {
 			throw new MWException( $status->getWikiText( false, false, 'en' ) );
@@ -1684,14 +1588,11 @@ class ParserTestRunner {
 	}
 
 	/**
-	 * Fake constant timestamp to make sure time-related parser
+	 * The ParserGetVariableValueTs hook, used to make sure time-related parser
 	 * functions give a persistent value.
-	 *
-	 * - Parser::getVariableValue (via ParserGetVariableValueTs hook)
-	 * - Parser::preSaveTransform (via ParserOptions)
 	 */
-	private function getFakeTimestamp() {
-		// parsed as '1970-01-01T00:02:03Z'
-		return 123;
+	static function getFakeTimestamp( &$parser, &$ts ) {
+		$ts = 123; // parsed as '1970-01-01T00:02:03Z'
+		return true;
 	}
 }

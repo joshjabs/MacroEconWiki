@@ -36,7 +36,7 @@ use MediaWiki\MediaWikiServices;
 abstract class TransformationalImageHandler extends ImageHandler {
 	/**
 	 * @param File $image
-	 * @param array &$params Transform parameters. Entries with the keys 'width'
+	 * @param array $params Transform parameters. Entries with the keys 'width'
 	 * and 'height' are the respective screen width and height, while the keys
 	 * 'physicalWidth' and 'physicalHeight' indicate the thumbnail dimensions.
 	 * @return bool
@@ -156,6 +156,7 @@ abstract class TransformationalImageHandler extends ImageHandler {
 			&& $scalerParams['physicalHeight'] == $scalerParams['srcHeight']
 			&& !isset( $scalerParams['quality'] )
 		) {
+
 			# normaliseParams (or the user) wants us to return the unscaled image
 			wfDebug( __METHOD__ . ": returning unscaled image\n" );
 
@@ -221,7 +222,7 @@ abstract class TransformationalImageHandler extends ImageHandler {
 		}
 
 		# Try a hook. Called "Bitmap" for historical reasons.
-		/** @var MediaTransformOutput $mto */
+		/** @var $mto MediaTransformOutput */
 		$mto = null;
 		Hooks::run( 'BitmapHandlerTransform', [ $this, $image, &$scalerParams, &$mto ] );
 		if ( !is_null( $mto ) ) {
@@ -588,7 +589,7 @@ abstract class TransformationalImageHandler extends ImageHandler {
 	 * Runs the 'BitmapHandlerCheckImageArea' hook.
 	 *
 	 * @param File $file
-	 * @param array &$params
+	 * @param array $params
 	 * @return bool
 	 * @since 1.25
 	 */

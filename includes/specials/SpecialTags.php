@@ -246,6 +246,7 @@ class SpecialTags extends SpecialPage {
 		}
 
 		if ( $showManageActions ) { // we've already checked that the user had the requisite userright
+
 			// activate
 			if ( ChangeTags::canActivateTag( $tag )->isOK() ) {
 				$actionLinks[] = $linkRenderer->makeKnownLink(
@@ -263,6 +264,7 @@ class SpecialTags extends SpecialPage {
 					[],
 					[ 'tag' => $tag ] );
 			}
+
 		}
 
 		if ( $showDeleteActions || $showManageActions ) {

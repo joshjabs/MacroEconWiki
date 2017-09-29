@@ -18,6 +18,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  *
  * @file
+ * @author Aaron Schulz
  */
 use Wikimedia\Rdbms\IDatabase;
 use Wikimedia\Rdbms\DBConnRef;
@@ -184,22 +185,15 @@ class JobQueueDB extends JobQueue {
 	 * @return void
 	 */
 	protected function doBatchPush( array $jobs, $flags ) {
-		$dbw = $this->getMasterDB();
-		// In general, there will be two cases here:
-		// a) sqlite; DB connection is probably a regular round-aware handle.
-		// If the connection is busy with a transaction, then defer the job writes
-		// until right before the main round commit step. Any errors that bubble
-		// up will rollback the main commit round.
-		// b) mysql/postgres; DB connection is generally a separate CONN_TRX_AUTO handle.
-		// No transaction is active nor will be started by writes, so enqueue the jobs
-		// now so that any errors will show up immediately as the interface expects. Any
-		// errors that bubble up will rollback the main commit round.
-		$fname = __METHOD__;
-		$dbw->onTransactionPreCommitOrIdle(
-			function () use ( $dbw, $jobs, $flags, $fname ) {
-				$this->doBatchPushInternal( $dbw, $jobs, $flags, $fname );
-			},
-			$fname
+		DeferredUpdates::addUpdate(
+			new AutoCommitUpdate(
+				$this->getMasterDB(),
+				__METHOD__,
+				function ( IDatabase $dbw, $fname ) use ( $jobs, $flags ) {
+					$this->doBatchPushInternal( $dbw, $jobs, $flags, $fname );
+				}
+			),
+			DeferredUpdates::PRESEND
 		);
 	}
 
@@ -734,6 +728,7 @@ class JobQueueDB extends JobQueue {
 			'job_title' => $job->getTitle()->getDBkey(),
 			'job_params' => self::makeBlob( $job->getParams() ),
 			// Additional job metadata
+			'job_id' => $dbw->nextSequenceValue( 'job_job_id_seq' ),
 			'job_timestamp' => $dbw->timestamp(),
 			'job_sha1' => Wikimedia\base_convert(
 				sha1( serialize( $job->getDeduplicationInfo() ) ),
@@ -774,15 +769,10 @@ class JobQueueDB extends JobQueue {
 	protected function getDB( $index ) {
 		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 		$lb = ( $this->cluster !== false )
-			? $lbFactory->getExternalLB( $this->cluster )
+			? $lbFactory->getExternalLB( $this->cluster, $this->wiki )
 			: $lbFactory->getMainLB( $this->wiki );
 
-		return ( $lb->getServerType( $lb->getWriterIndex() ) !== 'sqlite' )
-			// Keep a separate connection to avoid contention and deadlocks;
-			// However, SQLite has the opposite behavior due to DB-level locking.
-			? $lb->getConnectionRef( $index, [], $this->wiki, $lb::CONN_TRX_AUTO )
-			// Jobs insertion will be defered until the PRESEND stage to reduce contention.
-			: $lb->getConnectionRef( $index, [], $this->wiki );
+		return $lb->getConnectionRef( $index, [], $this->wiki );
 	}
 
 	/**

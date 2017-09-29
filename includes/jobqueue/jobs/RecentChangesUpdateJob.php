@@ -16,6 +16,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  *
  * @file
+ * @author Aaron Schulz
  * @ingroup JobQueue
  */
 use MediaWiki\MediaWikiServices;
@@ -86,21 +87,14 @@ class RecentChangesUpdateJob extends Job {
 		$ticket = $factory->getEmptyTransactionTicket( __METHOD__ );
 		$cutoff = $dbw->timestamp( time() - $wgRCMaxAge );
 		do {
-			$rcIds = [];
-			$rows = [];
-			$res = $dbw->select( 'recentchanges',
-				RecentChange::selectFields(),
+			$rcIds = $dbw->selectFieldValues( 'recentchanges',
+				'rc_id',
 				[ 'rc_timestamp < ' . $dbw->addQuotes( $cutoff ) ],
 				__METHOD__,
 				[ 'LIMIT' => $wgUpdateRowsPerQuery ]
 			);
-			foreach ( $res as $row ) {
-				$rcIds[] = $row->rc_id;
-				$rows[] = $row;
-			}
 			if ( $rcIds ) {
 				$dbw->delete( 'recentchanges', [ 'rc_id' => $rcIds ], __METHOD__ );
-				Hooks::run( 'RecentChangesPurgeRows', [ $rows ] );
 				// There might be more, so try waiting for replica DBs
 				try {
 					$factory->commitAndWaitForReplication(
@@ -237,6 +231,7 @@ class RecentChangesUpdateJob extends Job {
 					],
 					__METHOD__
 				);
+
 			},
 			__METHOD__
 		);

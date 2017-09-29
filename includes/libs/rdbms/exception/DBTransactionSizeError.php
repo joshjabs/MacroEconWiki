@@ -25,7 +25,7 @@ namespace Wikimedia\Rdbms;
  * @ingroup Database
  */
 class DBTransactionSizeError extends DBTransactionError {
-	public function getKey() {
+	function getKey() {
 		return 'transaction-duration-limit-exceeded';
 	}
 }

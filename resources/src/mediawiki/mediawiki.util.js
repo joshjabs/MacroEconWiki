@@ -1,59 +1,48 @@
 ( function ( mw, $ ) {
 	'use strict';
 
-	var util;
-
-	/**
-	 * Encode the string like PHP's rawurlencode
-	 * @ignore
-	 *
-	 * @param {string} str String to be encoded.
-	 * @return {string} Encoded string
-	 */
-	function rawurlencode( str ) {
-		str = String( str );
-		return encodeURIComponent( str )
-			.replace( /!/g, '%21' ).replace( /'/g, '%27' ).replace( /\(/g, '%28' )
-			.replace( /\)/g, '%29' ).replace( /\*/g, '%2A' ).replace( /~/g, '%7E' );
-	}
-
-	/**
-	 * Private helper function used by util.escapeId*()
-	 * @ignore
-	 *
-	 * @param {string} str String to be encoded
-	 * @param {string} mode Encoding mode, see documentation for $wgFragmentMode
-	 *     in DefaultSettings.php
-	 * @return {string} Encoded string
-	 */
-	function escapeIdInternal( str, mode ) {
-		str = String( str );
-
-		switch ( mode ) {
-			case 'html5':
-				return str.replace( / /g, '_' );
-			case 'html5-legacy':
-				str = str.replace( /[ \t\n\r\f_'"&#%]+/g, '_' )
-					.replace( /^_+|_+$/, '' );
-				if ( str === '' ) {
-					str = '_';
-				}
-				return str;
-			case 'legacy':
-				return rawurlencode( str.replace( / /g, '_' ) )
-					.replace( /%3A/g, ':' )
-					.replace( /%/g, '.' );
-			default:
-				throw new Error( 'Unrecognized ID escaping mode ' + mode );
-		}
-	}
-
 	/**
 	 * Utility library
 	 * @class mw.util
 	 * @singleton
 	 */
-	util = {
+	var util = {
+
+		/**
+		 * Initialisation
+		 * (don't call before document ready)
+		 */
+		init: function () {
+			util.$content = ( function () {
+				var i, l, $node, selectors;
+
+				selectors = [
+					// The preferred standard is class "mw-body".
+					// You may also use class "mw-body mw-body-primary" if you use
+					// mw-body in multiple locations. Or class "mw-body-primary" if
+					// you use mw-body deeper in the DOM.
+					'.mw-body-primary',
+					'.mw-body',
+
+					// If the skin has no such class, fall back to the parser output
+					'#mw-content-text',
+
+					// Should never happen... well, it could if someone is not finished writing a
+					// skin and has not yet inserted bodytext yet.
+					'body'
+				];
+
+				for ( i = 0, l = selectors.length; i < l; i++ ) {
+					$node = $( selectors[ i ] );
+					if ( $node.length ) {
+						return $node.first();
+					}
+				}
+
+				// Preserve existing customized value in case it was preset
+				return util.$content;
+			}() );
+		},
 
 		/* Main body */
 
@@ -63,36 +52,24 @@
 		 * @param {string} str String to be encoded.
 		 * @return {string} Encoded string
 		 */
-		rawurlencode: rawurlencode,
-
-		/**
-		 * Encode string into HTML id compatible form suitable for use in HTML
-		 * Analog to PHP Sanitizer::escapeIdForAttribute()
-		 *
-		 * @since 1.30
-		 *
-		 * @param {string} str String to encode
-		 * @return {string} Encoded string
-		 */
-		escapeIdForAttribute: function ( str ) {
-			var mode = mw.config.get( 'wgFragmentMode' )[ 0 ];
-
-			return escapeIdInternal( str, mode );
+		rawurlencode: function ( str ) {
+			str = String( str );
+			return encodeURIComponent( str )
+				.replace( /!/g, '%21' ).replace( /'/g, '%27' ).replace( /\(/g, '%28' )
+				.replace( /\)/g, '%29' ).replace( /\*/g, '%2A' ).replace( /~/g, '%7E' );
 		},
 
 		/**
-		 * Encode string into HTML id compatible form suitable for use in links
-		 * Analog to PHP Sanitizer::escapeIdForLink()
+		 * Encode the string like Sanitizer::escapeId in PHP
 		 *
-		 * @since 1.30
-		 *
-		 * @param {string} str String to encode
+		 * @param {string} str String to be encoded.
 		 * @return {string} Encoded string
 		 */
-		escapeIdForLink: function ( str ) {
-			var mode = mw.config.get( 'wgFragmentMode' )[ 0 ];
-
-			return escapeIdInternal( str, mode );
+		escapeId: function ( str ) {
+			str = String( str );
+			return util.rawurlencode( str.replace( / /g, '_' ) )
+				.replace( /%3A/g, ':' )
+				.replace( /%/g, '.' );
 		},
 
 		/**
@@ -160,7 +137,7 @@
 
 			// Append the encoded fragment
 			if ( fragment.length ) {
-				url += '#' + util.escapeIdForLink( fragment );
+				url += '#' + util.escapeId( fragment );
 			}
 
 			return url;
@@ -229,10 +206,10 @@
 		/**
 		 * The content wrapper of the skin (e.g. `.mw-body`).
 		 *
-		 * Populated on document ready. To use this property,
-		 * wait for `$.ready` and be sure to have a module dependency on
-		 * `mediawiki.util` which will ensure
-		 * your document ready handler fires after initialization.
+		 * Populated on document ready by #init. To use this property,
+		 * wait for `$.ready` and be sure to have a module depedendency on
+		 * `mediawiki.util` and `mediawiki.page.startup` which will ensure
+		 * your document ready handler fires after #init.
 		 *
 		 * Because of the lazy-initialised nature of this property,
 		 * you're discouraged from using it.
@@ -493,19 +470,11 @@
 			block = allowBlock ? '(?:\\/(?:12[0-8]|1[01][0-9]|[1-9]?\\d))?' : '';
 			RE_IPV6_ADD =
 				'(?:' + // starts with "::" (including "::")
-					':(?::|(?::' +
-						'[0-9A-Fa-f]{1,4}' +
-					'){1,7})' +
-					'|' + // ends with "::" (except "::")
-					'[0-9A-Fa-f]{1,4}' +
-					'(?::' +
-						'[0-9A-Fa-f]{1,4}' +
-					'){0,6}::' +
-					'|' + // contains no "::"
-					'[0-9A-Fa-f]{1,4}' +
-					'(?::' +
-						'[0-9A-Fa-f]{1,4}' +
-					'){7}' +
+				':(?::|(?::' + '[0-9A-Fa-f]{1,4}' + '){1,7})' +
+				'|' + // ends with "::" (except "::")
+				'[0-9A-Fa-f]{1,4}' + '(?::' + '[0-9A-Fa-f]{1,4}' + '){0,6}::' +
+				'|' + // contains no "::"
+				'[0-9A-Fa-f]{1,4}' + '(?::' + '[0-9A-Fa-f]{1,4}' + '){7}' +
 				')';
 
 			if ( new RegExp( '^' + RE_IPV6_ADD + block + '$' ).test( address ) ) {
@@ -513,11 +482,7 @@
 			}
 
 			// contains one "::" in the middle (single '::' check below)
-			RE_IPV6_ADD =
-				'[0-9A-Fa-f]{1,4}' +
-				'(?:::?' +
-					'[0-9A-Fa-f]{1,4}' +
-				'){1,6}';
+			RE_IPV6_ADD = '[0-9A-Fa-f]{1,4}' + '(?:::?' + '[0-9A-Fa-f]{1,4}' + '){1,6}';
 
 			return (
 				new RegExp( '^' + RE_IPV6_ADD + block + '$' ).test( address ) &&
@@ -545,7 +510,7 @@
 	 * @inheritdoc #getUrl
 	 * @deprecated since 1.23 Use #getUrl instead.
 	 */
-	mw.log.deprecate( util, 'wikiGetlink', util.getUrl, 'Use mw.util.getUrl instead.', 'mw.util.wikiGetlink' );
+	mw.log.deprecate( util, 'wikiGetlink', util.getUrl, 'Use mw.util.getUrl instead.' );
 
 	/**
 	 * Add the appropriate prefix to the accesskey shown in the tooltip.
@@ -565,7 +530,7 @@
 		}
 
 		$nodes.updateTooltipAccessKeys();
-	}, 'Use jquery.accessKeyLabel instead.', 'mw.util.updateTooltipAccessKeys' );
+	}, 'Use jquery.accessKeyLabel instead.' );
 
 	/**
 	 * Add a little box at the top of the screen to inform the user of
@@ -586,61 +551,7 @@
 		}
 		mw.notify( message, { autoHide: true, tag: 'legacy' } );
 		return true;
-	}, 'Use mw.notify instead.', 'mw.util.jsMessage' );
-
-	/**
-	 * Encode the string like Sanitizer::escapeId() in PHP
-	 *
-	 * @method escapeId
-	 * @deprecated since 1.30 use escapeIdForAttribute() or escapeIdForLink()
-	 * @param {string} str String to be encoded.
-	 * @return {string} Encoded string
-	 */
-	mw.log.deprecate( util, 'escapeId', function ( str ) {
-		return escapeIdInternal( str, 'legacy' );
-	}, 'Use mw.util.escapeIdForAttribute or mw.util.escapeIdForLink instead.', 'mw.util.escapeId' );
-
-	/**
-	 * Initialisation of mw.util.$content
-	 */
-	function init() {
-		util.$content = ( function () {
-			var i, l, $node, selectors;
-
-			selectors = [
-				// The preferred standard is class "mw-body".
-				// You may also use class "mw-body mw-body-primary" if you use
-				// mw-body in multiple locations. Or class "mw-body-primary" if
-				// you use mw-body deeper in the DOM.
-				'.mw-body-primary',
-				'.mw-body',
-
-				// If the skin has no such class, fall back to the parser output
-				'#mw-content-text'
-			];
-
-			for ( i = 0, l = selectors.length; i < l; i++ ) {
-				$node = $( selectors[ i ] );
-				if ( $node.length ) {
-					return $node.first();
-				}
-			}
-
-			// Should never happen... well, it could if someone is not finished writing a
-			// skin and has not yet inserted bodytext yet.
-			return $( 'body' );
-		}() );
-	}
-
-	/**
-	 * Former public initialisation. Now a no-op function.
-	 *
-	 * @method util_init
-	 * @deprecated since 1.30
-	 */
-	mw.log.deprecate( util, 'init', $.noop, 'Remove the call of mw.util.init().', 'mw.util.init' );
-
-	$( init );
+	}, 'Use mw.notify instead.' );
 
 	mw.util = util;
 	module.exports = util;

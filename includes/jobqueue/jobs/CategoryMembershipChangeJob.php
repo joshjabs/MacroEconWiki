@@ -34,7 +34,7 @@ use Wikimedia\Rdbms\LBFactory;
  * @since 1.27
  */
 class CategoryMembershipChangeJob extends Job {
-	/** @var int|null */
+	/** @var integer|null */
 	private $ticket;
 
 	const ENQUEUE_FUDGE_SEC = 60;

@@ -440,8 +440,9 @@ class MovePage {
 	 * @throws MWException
 	 */
 	private function moveToInternal( User $user, &$nt, $reason = '', $createRedirect = true,
-		array $changeTags = []
-	) {
+		array $changeTags = [] ) {
+
+		global $wgContLang;
 		if ( $nt->exists() ) {
 			$moveOverRedirect = true;
 			$logType = 'move_redir';
@@ -510,7 +511,7 @@ class MovePage {
 		$logEntry->setComment( $reason );
 		$logEntry->setParameters( [
 			'4::target' => $nt->getPrefixedText(),
-			'5::noredir' => $redirectContent ? '0' : '1',
+			'5::noredir' => $redirectContent ? '0': '1',
 		] );
 
 		$formatter = LogFormatter::newFromEntry( $logEntry );
@@ -519,6 +520,8 @@ class MovePage {
 		if ( $reason ) {
 			$comment .= wfMessage( 'colon-separator' )->inContentLanguage()->text() . $reason;
 		}
+		# Truncate for whole multibyte characters.
+		$comment = $wgContLang->truncate( $comment, 255 );
 
 		$dbw = wfGetDB( DB_MASTER );
 

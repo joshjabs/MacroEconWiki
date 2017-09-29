@@ -43,7 +43,8 @@ class LinkBatch {
 	protected $caller;
 
 	/**
-	 * @param Traversable|LinkTarget[] $arr Initial items to be added to the batch
+	 * LinkBatch constructor.
+	 * @param LinkTarget[] $arr Initial items to be added to the batch
 	 */
 	public function __construct( $arr = [] ) {
 		foreach ( $arr as $item ) {
@@ -131,7 +132,7 @@ class LinkBatch {
 	 * Do the query and add the results to a given LinkCache object
 	 * Return an array mapping PDBK to ID
 	 *
-	 * @param LinkCache &$cache
+	 * @param LinkCache $cache
 	 * @return array Remaining IDs
 	 */
 	protected function executeInto( &$cache ) {

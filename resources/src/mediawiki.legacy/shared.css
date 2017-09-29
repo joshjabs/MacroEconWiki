@@ -105,11 +105,6 @@ span.comment {
 	clear: both;
 }
 
-/* Prevent editing textarea from jumping when toolbar is loaded */
-#toolbar {
-	height: 22px;
-}
-
 /* Edit font preference */
 /* TODO: for 'default' on non-textareas we could compute the default font of textarea in the client */
 .mw-editfont-default:not( textarea ) {
@@ -145,7 +140,7 @@ span.comment {
 li span.deleted,
 span.history-deleted {
 	text-decoration: line-through;
-	color: #72777d;
+	color: #888;
 	font-style: italic;
 }
 
@@ -158,7 +153,7 @@ span.history-deleted {
 
 .unpatrolled {
 	font-weight: bold;
-	color: #d33;
+	color: #f00;
 }
 
 div.patrollink {
@@ -278,7 +273,7 @@ p.mw-delete-editreasons {
 
 /* The auto-generated edit comments */
 .autocomment {
-	color: #72777d;
+	color: #808080;
 }
 
 /** Generic minor/bot/newpage styling (recent changes) */
@@ -361,11 +356,11 @@ a.mw-selflink:visited {
  * keep in sync with commonPrint.css
  */
 table.wikitable {
-	background-color: #f8f9fa;
-	color: #222;
 	margin: 1em 0;
+	background-color: #f8f9fa;
 	border: 1px solid #a2a9b1;
 	border-collapse: collapse;
+	color: #000;
 }
 
 table.wikitable > tr > th,
@@ -394,7 +389,7 @@ table.wikitable > caption {
 }
 
 .error {
-	color: #d33;
+	color: #c00;
 }
 
 .warning {
@@ -428,7 +423,7 @@ table.wikitable > caption {
 }
 
 .errorbox {
-	color: #d33;
+	color: #c00;
 	border-color: #fac5c5;
 	background-color: #fae3e3;
 }
@@ -465,7 +460,7 @@ table.wikitable > caption {
 
 /* Note on preview page */
 .previewnote {
-	color: #d33;
+	color: #c00;
 	margin-bottom: 1em;
 }
 
@@ -641,9 +636,7 @@ ol:lang( sdh ) li {
 }
 
 ol:lang( hi ) li,
-ol:lang( mai ) li,
-ol:lang( mr ) li,
-ol:lang( ne ) li {
+ol:lang( mr ) li {
 	list-style-type: -moz-devanagari;
 	list-style-type: devanagari;
 }

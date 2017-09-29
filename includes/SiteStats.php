@@ -22,7 +22,6 @@
 
 use Wikimedia\Rdbms\Database;
 use Wikimedia\Rdbms\IDatabase;
-use MediaWiki\MediaWikiServices;
 
 /**
  * Static accessor class for site_stats and related things
@@ -33,6 +32,9 @@ class SiteStats {
 
 	/** @var bool */
 	private static $loaded = false;
+
+	/** @var int */
+	private static $jobs;
 
 	/** @var int[] */
 	private static $pageCount = [];
@@ -76,12 +78,9 @@ class SiteStats {
 		$row = self::doLoad( wfGetDB( DB_REPLICA ) );
 
 		if ( !self::isSane( $row ) ) {
-			$lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
-			if ( $lb->hasOrMadeRecentMasterChanges() ) {
-				// Might have just been initialized during this request? Underflow?
-				wfDebug( __METHOD__ . ": site_stats damaged or missing on replica DB\n" );
-				$row = self::doLoad( wfGetDB( DB_MASTER ) );
-			}
+			// Might have just been initialized during this request? Underflow?
+			wfDebug( __METHOD__ . ": site_stats damaged or missing on replica DB\n" );
+			$row = self::doLoad( wfGetDB( DB_MASTER ) );
 		}
 
 		if ( !$wgMiserMode && !self::isSane( $row ) ) {
@@ -99,7 +98,6 @@ class SiteStats {
 		if ( !self::isSane( $row ) ) {
 			wfDebug( __METHOD__ . ": site_stats persistently nonsensical o_O\n" );
 		}
-
 		return $row;
 	}
 
@@ -186,9 +184,9 @@ class SiteStats {
 	 * @return int
 	 */
 	static function numberingroup( $group ) {
-		$cache = MediaWikiServices::getInstance()->getMainWANObjectCache();
+		$cache = ObjectCache::getMainWANInstance();
 		return $cache->getWithSetCallback(
-			$cache->makeKey( 'SiteStats', 'groupcounts', $group ),
+			wfMemcKey( 'SiteStats', 'groupcounts', $group ),
 			$cache::TTL_HOUR,
 			function ( $oldValue, &$ttl, array &$setOpts ) use ( $group ) {
 				$dbr = wfGetDB( DB_REPLICA );
@@ -210,24 +208,24 @@ class SiteStats {
 	}
 
 	/**
-	 * Total number of jobs in the job queue.
 	 * @return int
 	 */
 	static function jobs() {
-		$cache = MediaWikiServices::getInstance()->getMainWANObjectCache();
-		return $cache->getWithSetCallback(
-			$cache->makeKey( 'SiteStats', 'jobscount' ),
-			$cache::TTL_MINUTE,
-			function ( $oldValue, &$ttl, array &$setOpts ) {
-				try{
-					$jobs = array_sum( JobQueueGroup::singleton()->getQueueSizes() );
-				} catch ( JobQueueError $e ) {
-					$jobs = 0;
-				}
-				return $jobs;
-			},
-			[ 'pcTTL' => $cache::TTL_PROC_LONG ]
-		);
+		if ( !isset( self::$jobs ) ) {
+			try{
+				self::$jobs = array_sum( JobQueueGroup::singleton()->getQueueSizes() );
+			} catch ( JobQueueError $e ) {
+				self::$jobs = 0;
+			}
+			/**
+			 * Zero rows still do single row read for row that doesn't exist,
+			 * but people are annoyed by that
+			 */
+			if ( self::$jobs == 1 ) {
+				self::$jobs = 0;
+			}
+		}
+		return self::$jobs;
 	}
 
 	/**
@@ -293,8 +291,9 @@ class SiteStatsInit {
 	private $mUsers = null, $mFiles = null;
 
 	/**
+	 * Constructor
 	 * @param bool|IDatabase $database
-	 * - bool: Whether to use the master DB
+	 * - boolean: Whether to use the master DB
 	 * - IDatabase: Database connection to use
 	 */
 	public function __construct( $database = false ) {
@@ -379,10 +378,10 @@ class SiteStatsInit {
 	 * for the original initStats, but without output.
 	 *
 	 * @param IDatabase|bool $database
-	 * - bool: Whether to use the master DB
+	 * - boolean: Whether to use the master DB
 	 * - IDatabase: Database connection to use
 	 * @param array $options Array of options, may contain the following values
-	 * - activeUsers bool: Whether to update the number of active users (default: false)
+	 * - activeUsers boolean: Whether to update the number of active users (default: false)
 	 */
 	public static function doAllAndCommit( $database, array $options = [] ) {
 		$options += [ 'update' => false, 'activeUsers' => false ];

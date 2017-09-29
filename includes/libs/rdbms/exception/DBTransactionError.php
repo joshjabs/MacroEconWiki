@@ -28,3 +28,4 @@ class DBTransactionError extends DBExpectedError {
 }
 
 class_alias( DBTransactionError::class, 'DBTransactionError' );
+

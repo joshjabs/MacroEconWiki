@@ -34,7 +34,7 @@ class MalformedTitleException extends Exception implements ILocalizedException {
 	 * $titleText will be appended if it's not null. (since MW 1.26)
 	 */
 	public function __construct(
-		$errorMessage, $titleText = null, $errorMessageParameters = []
+		$errorMessage = null, $titleText = null, $errorMessageParameters = []
 	) {
 		$this->errorMessage = $errorMessage;
 		$this->titleText = $titleText;
@@ -59,7 +59,7 @@ class MalformedTitleException extends Exception implements ILocalizedException {
 
 	/**
 	 * @since 1.26
-	 * @return string
+	 * @return string|null
 	 */
 	public function getErrorMessage() {
 		return $this->errorMessage;

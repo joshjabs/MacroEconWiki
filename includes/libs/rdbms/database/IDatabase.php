@@ -206,7 +206,6 @@ interface IDatabase {
 	 * Returns true if this database does an implicit sort when doing GROUP BY
 	 *
 	 * @return bool
-	 * @deprecated Since 1.30; only use grouped or aggregated fields in the SELECT
 	 */
 	public function implicitGroupby();
 
@@ -274,14 +273,6 @@ interface IDatabase {
 	 * @since 1.27
 	 */
 	public function pendingWriteCallers();
-
-	/**
-	 * Get the number of affected rows from pending write queries
-	 *
-	 * @return int
-	 * @since 1.30
-	 */
-	public function pendingWriteRowsAffected();
 
 	/**
 	 * Is a connection to the database open?
@@ -421,9 +412,12 @@ interface IDatabase {
 	/**
 	 * Get the inserted value of an auto-increment row
 	 *
-	 * This should only be called after an insert that used an auto-incremented
-	 * value. If no such insert was previously done in the current database
-	 * session, the return value is undefined.
+	 * The value inserted should be fetched from nextSequenceValue()
+	 *
+	 * Example:
+	 * $id = $dbw->nextSequenceValue( 'page_page_id_seq' );
+	 * $dbw->insert( 'page', [ 'page_id' => $id ] );
+	 * $id = $dbw->insertId();
 	 *
 	 * @return int
 	 */
@@ -566,12 +560,11 @@ interface IDatabase {
 	 * @param string|array $cond The condition array. See IDatabase::select() for details.
 	 * @param string $fname The function name of the caller.
 	 * @param string|array $options The query options. See IDatabase::select() for details.
-	 * @param string|array $join_conds The query join conditions. See IDatabase::select() for details.
 	 *
 	 * @return bool|mixed The value from the field, or false on failure.
 	 */
 	public function selectField(
-		$table, $var, $cond = '', $fname = __METHOD__, $options = [], $join_conds = []
+		$table, $var, $cond = '', $fname = __METHOD__, $options = []
 	);
 
 	/**
@@ -588,13 +581,12 @@ interface IDatabase {
 	 * @param string|array $cond The condition array. See IDatabase::select() for details.
 	 * @param string $fname The function name of the caller.
 	 * @param string|array $options The query options. See IDatabase::select() for details.
-	 * @param string|array $join_conds The query join conditions. See IDatabase::select() for details.
 	 *
 	 * @return bool|array The values from the field, or false on failure
 	 * @since 1.25
 	 */
 	public function selectFieldValues(
-		$table, $var, $cond = '', $fname = __METHOD__, $options = [], $join_conds = []
+		$table, $var, $cond = '', $fname = __METHOD__, $options = []
 	);
 
 	/**
@@ -1038,24 +1030,10 @@ interface IDatabase {
 	public function buildStringCast( $field );
 
 	/**
-	 * Returns true if DBs are assumed to be on potentially different servers
-	 *
-	 * In systems like mysql/mariadb, different databases can easily be referenced on a single
-	 * connection merely by name, even in a single query via JOIN. On the other hand, Postgres
-	 * treats databases as fully separate, only allowing mechanisms like postgres_fdw to
-	 * effectively "mount" foreign DBs. This is true even among DBs on the same server.
-	 *
-	 * @return bool
-	 * @since 1.29
-	 */
-	public function databasesAreIndependent();
-
-	/**
 	 * Change the current database
 	 *
 	 * @param string $db
 	 * @return bool Success or failure
-	 * @throws DBConnectionError If databasesAreIndependent() is true and an error occurs
 	 */
 	public function selectDB( $db );
 
@@ -1112,20 +1090,15 @@ interface IDatabase {
 	public function anyString();
 
 	/**
-	 * Deprecated method, calls should be removed.
+	 * Returns an appropriately quoted sequence value for inserting a new row.
+	 * MySQL has autoincrement fields, so this is just NULL. But the PostgreSQL
+	 * subclass will return an integer, and save the value for insertId()
 	 *
-	 * This was formerly used for PostgreSQL and Oracle to handle
-	 * self::insertId() auto-incrementing fields. It is no longer necessary
-	 * since DatabasePostgres::insertId() has been reimplemented using
-	 * `lastval()` and Oracle has been reimplemented using triggers.
-	 *
-	 * Implementations should return null if inserting `NULL` into an
-	 * auto-incrementing field works, otherwise it should return an instance of
-	 * NextSequenceValue and filter it on calls to relevant methods.
-	 *
-	 * @deprecated since 1.30, no longer needed
+	 * Any implementation of this function should *not* involve reusing
+	 * sequence numbers created for rolled-back transactions.
+	 * See https://bugs.mysql.com/bug.php?id=30767 for details.
 	 * @param string $seqName
-	 * @return null|NextSequenceValue
+	 * @return null|int
 	 */
 	public function nextSequenceValue( $seqName );
 
@@ -1252,14 +1225,12 @@ interface IDatabase {
 	 *    IDatabase::insert() for details.
 	 * @param array $selectOptions Options for the SELECT part of the query, see
 	 *    IDatabase::select() for details.
-	 * @param array $selectJoinConds Join conditions for the SELECT part of the query, see
-	 *    IDatabase::select() for details.
 	 *
-	 * @return bool
+	 * @return IResultWrapper
 	 */
 	public function insertSelect( $destTable, $srcTable, $varMap, $conds,
 		$fname = __METHOD__,
-		$insertOptions = [], $selectOptions = [], $selectJoinConds = []
+		$insertOptions = [], $selectOptions = []
 	);
 
 	/**
@@ -1280,37 +1251,6 @@ interface IDatabase {
 	public function unionQueries( $sqls, $all );
 
 	/**
-	 * Construct a UNION query for permutations of conditions
-	 *
-	 * Databases sometimes have trouble with queries that have multiple values
-	 * for multiple condition parameters combined with limits and ordering.
-	 * This method constructs queries for the Cartesian product of the
-	 * conditions and unions them all together.
-	 *
-	 * @see IDatabase::select()
-	 * @since 1.30
-	 * @param string|array $table Table name
-	 * @param string|array $vars Field names
-	 * @param array $permute_conds Conditions for the Cartesian product. Keys
-	 *  are field names, values are arrays of the possible values for that
-	 *  field.
-	 * @param string|array $extra_conds Additional conditions to include in the
-	 *  query.
-	 * @param string $fname Caller function name
-	 * @param string|array $options Query options. In addition to the options
-	 *  recognized by IDatabase::select(), the following may be used:
-	 *   - NOTALL: Set to use UNION instead of UNION ALL.
-	 *   - INNER ORDER BY: If specified and supported, subqueries will use this
-	 *     instead of ORDER BY.
-	 * @param string|array $join_conds Join conditions
-	 * @return string SQL query string.
-	 */
-	public function unionConditionPermutations(
-		$table, $vars, array $permute_conds, $extra_conds = '', $fname = __METHOD__,
-		$options = [], $join_conds = []
-	);
-
-	/**
 	 * Returns an SQL expression for a simple conditional. This doesn't need
 	 * to be overridden unless CASE isn't supported in your DBMS.
 	 *
@@ -1322,7 +1262,7 @@ interface IDatabase {
 	public function conditional( $cond, $trueVal, $falseVal );
 
 	/**
-	 * Returns a command for str_replace function in SQL query.
+	 * Returns a comand for str_replace function in SQL query.
 	 * Uses REPLACE() in MySQL
 	 *
 	 * @param string $orig Column to modify

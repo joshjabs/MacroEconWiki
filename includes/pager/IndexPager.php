@@ -162,8 +162,8 @@ abstract class IndexPager extends ContextSource implements Pager {
 				: [];
 		} elseif ( is_array( $index ) ) {
 			# First element is the default
-			$this->mIndexField = reset( $index );
-			$this->mOrderType = key( $index );
+			reset( $index );
+			list( $this->mOrderType, $this->mIndexField ) = each( $index );
 			$this->mExtraSortFields = isset( $extraSort[$this->mOrderType] )
 				? (array)$extraSort[$this->mOrderType]
 				: [];
@@ -737,6 +737,6 @@ abstract class IndexPager extends ContextSource implements Pager {
 	 * @return bool
 	 */
 	protected function getDefaultDirections() {
-		return self::DIR_ASCENDING;
+		return IndexPager::DIR_ASCENDING;
 	}
 }

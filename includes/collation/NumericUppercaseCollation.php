@@ -40,7 +40,9 @@ class NumericUppercaseCollation extends UppercaseCollation {
 	private $digitTransformLang;
 
 	/**
-	 * @param Language $lang How to convert digits.
+	 * Constructor
+	 *
+	 * @param $lang Language How to convert digits.
 	 *  For example, if given language "my" than ၇ is treated like 7.
 	 *
 	 * It is expected that usually this is given $wgContLang.
@@ -76,8 +78,8 @@ class NumericUppercaseCollation extends UppercaseCollation {
 	 *
 	 * based on Language::parseFormattedNumber but without commas.
 	 *
-	 * @param string $string sortkey to unlocalize digits of
-	 * @return string Sortkey with all localized digits replaced with ASCII digits.
+	 * @param $string String sortkey to unlocalize digits of
+	 * @return String Sortkey with all localized digits replaced with ASCII digits.
 	 */
 	private function convertDigits( $string ) {
 		$table = $this->digitTransformLang->digitTransformTable();

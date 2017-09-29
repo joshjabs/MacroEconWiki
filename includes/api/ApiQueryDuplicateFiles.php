@@ -91,7 +91,7 @@ class ApiQueryDuplicateFiles extends ApiQueryGeneratorBase {
 
 		$sha1s = [];
 		foreach ( $files as $file ) {
-			/** @var File $file */
+			/** @var $file File */
 			$sha1s[$file->getName()] = $file->getSha1();
 		}
 
@@ -114,7 +114,7 @@ class ApiQueryDuplicateFiles extends ApiQueryGeneratorBase {
 			if ( $params['dir'] == 'descending' ) {
 				$dupFiles = array_reverse( $dupFiles );
 			}
-			/** @var File $dupFile */
+			/** @var $dupFile File */
 			foreach ( $dupFiles as $dupFile ) {
 				$dupName = $dupFile->getName();
 				if ( $image == $dupName && $dupFile->isLocal() ) {

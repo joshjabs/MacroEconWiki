@@ -28,14 +28,14 @@ class MimeMagic extends MimeAnalyzer {
 	/**
 	 * Get an instance of this class
 	 * @return MimeMagic
-	 * @deprecated since 1.28 get a MimeAnalyzer instance from MediaWikiServices
+	 * @deprecated since 1.28 get a MimeAnalyzer instance form MediaWikiServices
 	 */
 	public static function singleton() {
 		// XXX: We know that the MimeAnalyzer is currently an instance of MimeMagic
 		$instance = MediaWikiServices::getInstance()->getMimeAnalyzer();
 		Assert::postcondition(
 			$instance instanceof MimeMagic,
-			__METHOD__ . ' should return an instance of ' . self::class
+			__METHOD__ . ' should return an instance of ' . MimeMagic::class
 		);
 		return $instance;
 	}

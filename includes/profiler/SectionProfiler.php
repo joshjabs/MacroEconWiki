@@ -19,6 +19,7 @@
  *
  * @file
  * @ingroup Profiler
+ * @author Aaron Schulz
  */
 use Wikimedia\ScopedCallback;
 
@@ -66,7 +67,7 @@ class SectionProfiler {
 	}
 
 	/**
-	 * @param ScopedCallback &$section
+	 * @param ScopedCallback $section
 	 */
 	public function scopedProfileOut( ScopedCallback &$section ) {
 		$section = null;
@@ -298,7 +299,7 @@ class SectionProfiler {
 			/* Find all items under this entry */
 			$level = $stack[$max][1];
 			$working = [];
-			for ( $i = $max - 1; $i >= 0; $i-- ) {
+			for ( $i = $max -1; $i >= 0; $i-- ) {
 				if ( $stack[$i][1] > $level ) {
 					$working[] = $stack[$i];
 				} else {
@@ -439,7 +440,7 @@ class SectionProfiler {
 	protected function calltreeCount( $stack, $start ) {
 		$level = $stack[$start][1];
 		$count = 0;
-		for ( $i = $start - 1; $i >= 0 && $stack[$i][1] > $level; $i-- ) {
+		for ( $i = $start -1; $i >= 0 && $stack[$i][1] > $level; $i-- ) {
 			$count ++;
 		}
 		return $count;

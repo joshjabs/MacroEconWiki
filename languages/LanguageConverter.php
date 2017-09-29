@@ -36,7 +36,6 @@ class LanguageConverter {
 	 * @var array
 	 */
 	static public $languagesWithVariants = [
-		'en',
 		'gan',
 		'iu',
 		'kk',
@@ -60,6 +59,11 @@ class LanguageConverter {
 	public $mTables;
 	// 'bidirectional' 'unidirectional' 'disable' for each variant
 	public $mManualLevel;
+
+	/**
+	 * @var string Memcached key name
+	 */
+	public $mCacheKey;
 
 	public $mLangObj;
 	public $mFlags;
@@ -91,6 +95,7 @@ class LanguageConverter {
 		$this->mVariants = array_diff( $variants, $wgDisabledVariants );
 		$this->mVariantFallbacks = $variantfallbacks;
 		$this->mVariantNames = Language::fetchLanguageNames();
+		$this->mCacheKey = wfMemcKey( 'conversiontables', $maincode );
 		$defaultflags = [
 			// 'S' show converted text
 			// '+' add rules for alltext
@@ -339,6 +344,7 @@ class LanguageConverter {
 	 * @return string The converted text
 	 */
 	public function autoConvert( $text, $toVariant = false ) {
+
 		$this->loadTables();
 
 		if ( !$toVariant ) {
@@ -662,7 +668,7 @@ class LanguageConverter {
 	 *
 	 * @param string $text Text to be converted
 	 * @param string $variant The target variant code
-	 * @param int &$startPos
+	 * @param int $startPos
 	 * @param int $depth Depth of recursion
 	 *
 	 * @throws MWException
@@ -860,9 +866,8 @@ class LanguageConverter {
 		$this->mTablesLoaded = true;
 		$this->mTables = false;
 		$cache = ObjectCache::getInstance( $wgLanguageConverterCacheType );
-		$cacheKey = $cache->makeKey( 'conversiontables', $this->mMainLanguageCode );
 		if ( $fromCache ) {
-			$this->mTables = $cache->get( $cacheKey );
+			$this->mTables = $cache->get( $this->mCacheKey );
 		}
 		if ( !$this->mTables || !array_key_exists( self::CACHE_VERSION_KEY, $this->mTables ) ) {
 			// not in cache, or we need a fresh reload.
@@ -877,7 +882,7 @@ class LanguageConverter {
 			$this->postLoadTables();
 			$this->mTables[self::CACHE_VERSION_KEY] = true;
 
-			$cache->set( $cacheKey, $this->mTables, 43200 );
+			$cache->set( $this->mCacheKey, $this->mTables, 43200 );
 		}
 	}
 
@@ -890,11 +895,9 @@ class LanguageConverter {
 	/**
 	 * Reload the conversion tables.
 	 *
-	 * Also used by test suites which need to reset the converter state.
-	 *
 	 * @private
 	 */
-	private function reloadTables() {
+	function reloadTables() {
 		if ( $this->mTables ) {
 			unset( $this->mTables );
 		}

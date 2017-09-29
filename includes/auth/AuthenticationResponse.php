@@ -133,7 +133,7 @@ class AuthenticationResponse {
 	 */
 	public static function newPass( $username = null ) {
 		$ret = new AuthenticationResponse;
-		$ret->status = self::PASS;
+		$ret->status = AuthenticationResponse::PASS;
 		$ret->username = $username;
 		return $ret;
 	}
@@ -145,7 +145,7 @@ class AuthenticationResponse {
 	 */
 	public static function newFail( Message $msg ) {
 		$ret = new AuthenticationResponse;
-		$ret->status = self::FAIL;
+		$ret->status = AuthenticationResponse::FAIL;
 		$ret->message = $msg;
 		$ret->messageType = 'error';
 		return $ret;
@@ -158,7 +158,7 @@ class AuthenticationResponse {
 	 */
 	public static function newRestart( Message $msg ) {
 		$ret = new AuthenticationResponse;
-		$ret->status = self::RESTART;
+		$ret->status = AuthenticationResponse::RESTART;
 		$ret->message = $msg;
 		return $ret;
 	}
@@ -169,7 +169,7 @@ class AuthenticationResponse {
 	 */
 	public static function newAbstain() {
 		$ret = new AuthenticationResponse;
-		$ret->status = self::ABSTAIN;
+		$ret->status = AuthenticationResponse::ABSTAIN;
 		return $ret;
 	}
 
@@ -189,7 +189,7 @@ class AuthenticationResponse {
 		}
 
 		$ret = new AuthenticationResponse;
-		$ret->status = self::UI;
+		$ret->status = AuthenticationResponse::UI;
 		$ret->neededRequests = $reqs;
 		$ret->message = $msg;
 		$ret->messageType = $msgtype;
@@ -209,7 +209,7 @@ class AuthenticationResponse {
 		}
 
 		$ret = new AuthenticationResponse;
-		$ret->status = self::REDIRECT;
+		$ret->status = AuthenticationResponse::REDIRECT;
 		$ret->neededRequests = $reqs;
 		$ret->redirectTarget = $redirectTarget;
 		$ret->redirectApiData = $redirectApiData;

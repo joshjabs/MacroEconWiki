@@ -25,7 +25,8 @@ use RunningStat\RunningStat;
  * <https://github.com/phacility/xhprof>. XHProf can be installed as a PECL
  * package for use with PHP5 (Zend PHP) and is built-in to HHVM 3.3.0.
  *
- * @copyright © 2014 Wikimedia Foundation and contributors
+ * @author Bryan Davis <bd808@wikimedia.org>
+ * @copyright © 2014 Bryan Davis and Wikimedia Foundation.
  * @since 1.28
  */
 class XhprofData {
@@ -107,7 +108,6 @@ class XhprofData {
 	 * The resulting array is left padded with nulls, so a key
 	 * with no parent (eg 'main()') will return [null, 'function'].
 	 *
-	 * @param string $key
 	 * @return array
 	 */
 	public static function splitKey( $key ) {

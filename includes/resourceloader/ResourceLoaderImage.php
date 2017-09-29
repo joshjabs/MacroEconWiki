@@ -148,8 +148,9 @@ class ResourceLoaderImage {
 	public function getExtension( $format = 'original' ) {
 		if ( $format === 'rasterized' && $this->extension === 'svg' ) {
 			return 'png';
+		} else {
+			return $this->extension;
 		}
-		return $this->extension;
 	}
 
 	/**

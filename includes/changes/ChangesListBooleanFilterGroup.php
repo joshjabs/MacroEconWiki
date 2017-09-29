@@ -19,21 +19,13 @@ class ChangesListBooleanFilterGroup extends ChangesListFilterGroup {
 	 * @param array $groupDefinition Configuration of group
 	 * * $groupDefinition['name'] string Group name
 	 * * $groupDefinition['title'] string i18n key for title (optional, can be omitted
-	 *     only if none of the filters in the group display in the structured UI)
+	 * *  only if none of the filters in the group display in the structured UI)
 	 * * $groupDefinition['priority'] int Priority integer.  Higher means higher in the
-	 *     group list.
+	 * *  group list.
 	 * * $groupDefinition['filters'] array Numeric array of filter definitions, each of which
-	 *     is an associative array to be passed to the filter constructor.  However,
-	 *    'priority' is optional for the filters.  Any filter that has priority unset
-	 *     will be put to the bottom, in the order given.
-	 * * $groupDefinition['whatsThisHeader'] string i18n key for header of "What's
-	 *     This" popup (optional).
-	 * * $groupDefinition['whatsThisBody'] string i18n key for body of "What's This"
-	 *     popup (optional).
-	 * * $groupDefinition['whatsThisUrl'] string URL for main link of "What's This"
-	 *     popup (optional).
-	 * * $groupDefinition['whatsThisLinkText'] string i18n key of text for main link of
-	 *     "What's This" popup (optional).
+	 * *  is an associative array to be passed to the filter constructor.  However,
+	 * *  'priority' is optional for the filters.  Any filter that has priority unset
+	 * *  will be put to the bottom, in the order given.
 	 */
 	public function __construct( array $groupDefinition ) {
 		$groupDefinition['isFullCoverage'] = true;
@@ -43,7 +35,7 @@ class ChangesListBooleanFilterGroup extends ChangesListFilterGroup {
 	}
 
 	/**
-	 * @inheritDoc
+	 * @inheritdoc
 	 */
 	protected function createFilter( array $filterDefinition ) {
 		return new ChangesListBooleanFilter( $filterDefinition );
@@ -59,7 +51,7 @@ class ChangesListBooleanFilterGroup extends ChangesListFilterGroup {
 	}
 
 	/**
-	 * @inheritDoc
+	 * @inheritdoc
 	 */
 	public function isPerGroupRequestParameter() {
 		return false;

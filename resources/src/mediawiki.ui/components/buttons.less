@@ -128,6 +128,7 @@
 	// Progressive buttons
 	//
 	// Use progressive buttons for actions which lead to a next step in the process.
+	// .mw-ui-constructive is deprecated; consolidated with `progressive`, see T110555
 	//
 	// Markup:
 	// <div>
@@ -138,7 +139,8 @@
 	// </div>
 	//
 	// Styleguide 2.1.1.
-	&.mw-ui-progressive {
+	&.mw-ui-progressive,
+	&.mw-ui-constructive {
 		.button-colors-primary( @colorProgressive, @colorProgressiveHighlight, @colorProgressiveActive );
 
 		&.mw-ui-quiet {

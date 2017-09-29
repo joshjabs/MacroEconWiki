@@ -45,10 +45,6 @@ class UsageException extends MWException {
 		$this->mCodestr = $codestr;
 		$this->mExtraData = $extradata;
 
-		if ( !$this instanceof ApiUsageException ) {
-			wfDeprecated( __METHOD__, '1.29' );
-		}
-
 		// This should never happen, so throw an exception about it that will
 		// hopefully get logged with a backtrace (T138585)
 		if ( !is_string( $codestr ) || $codestr === '' ) {
@@ -62,7 +58,6 @@ class UsageException extends MWException {
 	 * @return string
 	 */
 	public function getCodeString() {
-		wfDeprecated( __METHOD__, '1.29' );
 		return $this->mCodestr;
 	}
 
@@ -70,7 +65,6 @@ class UsageException extends MWException {
 	 * @return array
 	 */
 	public function getMessageArray() {
-		wfDeprecated( __METHOD__, '1.29' );
 		$result = [
 			'code' => $this->mCodestr,
 			'info' => $this->getMessage()
@@ -152,7 +146,7 @@ class ApiUsageException extends UsageException implements ILocalizedException {
 	}
 
 	/**
-	 * @return ApiMessage
+	 * @returns ApiMessage
 	 */
 	private function getApiMessage() {
 		$errors = $this->status->getErrorsByType( 'error' );
@@ -186,20 +180,18 @@ class ApiUsageException extends UsageException implements ILocalizedException {
 	/**
 	 * @deprecated Do not use. This only exists here because UsageException is in
 	 *  the inheritance chain for backwards compatibility.
-	 * @inheritDoc
+	 * @inheritdoc
 	 */
 	public function getCodeString() {
-		wfDeprecated( __METHOD__, '1.29' );
 		return $this->getApiMessage()->getApiCode();
 	}
 
 	/**
 	 * @deprecated Do not use. This only exists here because UsageException is in
 	 *  the inheritance chain for backwards compatibility.
-	 * @inheritDoc
+	 * @inheritdoc
 	 */
 	public function getMessageArray() {
-		wfDeprecated( __METHOD__, '1.29' );
 		$enMsg = clone $this->getApiMessage();
 		$enMsg->inLanguage( 'en' )->useDatabase( false );
 
@@ -210,7 +202,7 @@ class ApiUsageException extends UsageException implements ILocalizedException {
 	}
 
 	/**
-	 * @inheritDoc
+	 * @inheritdoc
 	 */
 	public function getMessageObject() {
 		return $this->status->getMessage();

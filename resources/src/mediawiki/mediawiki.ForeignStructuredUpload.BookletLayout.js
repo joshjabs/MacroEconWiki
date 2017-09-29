@@ -236,9 +236,10 @@
 			required: true,
 			validate: /.+/
 		} );
-		this.descriptionWidget = new OO.ui.MultilineTextInputWidget( {
+		this.descriptionWidget = new OO.ui.TextInputWidget( {
 			required: true,
 			validate: /\S+/,
+			multiline: true,
 			autosize: true
 		} );
 		this.categoriesWidget = new mw.widgets.CategoryMultiselectWidget( {
@@ -356,9 +357,9 @@
 	 */
 	mw.ForeignStructuredUpload.BookletLayout.prototype.saveFile = function () {
 		var title = mw.Title.newFromText(
-			this.getFilename(),
-			mw.config.get( 'wgNamespaceIds' ).file
-		);
+				this.getFilename(),
+				mw.config.get( 'wgNamespaceIds' ).file
+			);
 
 		return this.uploadPromise
 			.then( this.validateFilename.bind( this, title ) )

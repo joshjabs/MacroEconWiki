@@ -323,6 +323,7 @@ class ResourceLoaderWikiModuleTest extends ResourceLoaderTestCase {
 			$expected,
 			$module->getContent( $titleText )
 		);
+
 	}
 
 	/**

@@ -29,9 +29,6 @@
 class ExternalStoreHttp extends ExternalStoreMedium {
 	/**
 	 * @see ExternalStoreMedium::fetchFromURL()
-	 * @param string $url
-	 * @return string|bool
-	 * @throws MWException
 	 */
 	public function fetchFromURL( $url ) {
 		return Http::get( $url, [], __METHOD__ );
@@ -39,10 +36,6 @@ class ExternalStoreHttp extends ExternalStoreMedium {
 
 	/**
 	 * @see ExternalStoreMedium::store()
-	 * @param string $cluster
-	 * @param string $data
-	 * @return string|bool
-	 * @throws MWException
 	 */
 	public function store( $cluster, $data ) {
 		throw new MWException( "ExternalStoreHttp is read-only and does not support store()." );

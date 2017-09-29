@@ -71,7 +71,7 @@ TEXT
 	public function execute() {
 		$begin = $this->getOption( 'begin', '' );
 		$throttle = $this->getOption( 'throttle', 0 );
-		$force = $this->hasOption( 'force' );
+		$force = $this->getOption( 'force', false );
 
 		$dbw = $this->getDB( DB_MASTER );
 

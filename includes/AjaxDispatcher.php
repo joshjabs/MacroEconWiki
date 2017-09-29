@@ -56,7 +56,6 @@ class AjaxDispatcher {
 
 	/**
 	 * Load up our object with user supplied data
-	 * @param Config $config
 	 */
 	function __construct( Config $config ) {
 		$this->config = $config;

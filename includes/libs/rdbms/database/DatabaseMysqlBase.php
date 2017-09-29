@@ -51,8 +51,6 @@ abstract class DatabaseMysqlBase extends Database {
 	/** @var string|null */
 	protected $sslCertPath;
 	/** @var string|null */
-	protected $sslCAFile;
-	/** @var string|null */
 	protected $sslCAPath;
 	/** @var string[]|null */
 	protected $sslCiphers;
@@ -77,8 +75,7 @@ abstract class DatabaseMysqlBase extends Database {
 	 *   - useGTIDs : use GTID methods like MASTER_GTID_WAIT() when possible.
 	 *   - sslKeyPath : path to key file [default: null]
 	 *   - sslCertPath : path to certificate file [default: null]
-	 *   - sslCAFile: path to a single certificate authority PEM file [default: null]
-	 *   - sslCAPath : parth to certificate authority PEM directory [default: null]
+	 *   - sslCAPath : parth to certificate authority PEM files [default: null]
 	 *   - sslCiphers : array list of allowable ciphers [default: null]
 	 * @param array $params
 	 */
@@ -90,7 +87,7 @@ abstract class DatabaseMysqlBase extends Database {
 			? $params['lagDetectionOptions']
 			: [];
 		$this->useGTIDs = !empty( $params['useGTIDs' ] );
-		foreach ( [ 'KeyPath', 'CertPath', 'CAFile', 'CAPath', 'Ciphers' ] as $name ) {
+		foreach ( [ 'KeyPath', 'CertPath', 'CAPath', 'Ciphers' ] as $name ) {
 			$var = "ssl{$name}";
 			if ( isset( $params[$var] ) ) {
 				$this->$var = $params[$var];
@@ -486,10 +483,6 @@ abstract class DatabaseMysqlBase extends Database {
 	 */
 	abstract protected function mysqlError( $conn = null );
 
-	protected function wasQueryTimeout( $error, $errno ) {
-		return $errno == 2062;
-	}
-
 	/**
 	 * @param string $table
 	 * @param array $uniqueIndexes
@@ -534,28 +527,16 @@ abstract class DatabaseMysqlBase extends Database {
 	}
 
 	public function tableExists( $table, $fname = __METHOD__ ) {
-		// Split database and table into proper variables as Database::tableName() returns
-		// shared tables prefixed with their database, which do not work in SHOW TABLES statements
-		list( $database, , $prefix, $table ) = $this->qualifiedTableComponents( $table );
-		$tableName = "{$prefix}{$table}";
-
-		if ( isset( $this->mSessionTempTables[$tableName] ) ) {
+		$table = $this->tableName( $table, 'raw' );
+		if ( isset( $this->mSessionTempTables[$table] ) ) {
 			return true; // already known to exist and won't show in SHOW TABLES anyway
 		}
 
 		// We can't use buildLike() here, because it specifies an escape character
 		// other than the backslash, which is the only one supported by SHOW TABLES
-		$encLike = $this->escapeLikeInternal( $tableName, '\\' );
+		$encLike = $this->escapeLikeInternal( $table, '\\' );
 
-		// If the database has been specified (such as for shared tables), use "FROM"
-		if ( $database !== '' ) {
-			$encDatabase = $this->addIdentifierQuotes( $database );
-			$query = "SHOW TABLES FROM $encDatabase LIKE '$encLike'";
-		} else {
-			$query = "SHOW TABLES LIKE '$encLike'";
-		}
-
-		return $this->query( $query, $fname )->numRows() > 0;
+		return $this->query( "SHOW TABLES LIKE '$encLike'", $fname )->numRows() > 0;
 	}
 
 	/**
@@ -785,8 +766,6 @@ abstract class DatabaseMysqlBase extends Database {
 	 * @see https://www.percona.com/doc/percona-toolkit/2.1/pt-heartbeat.html
 	 */
 	protected function getHeartbeatData( array $conds ) {
-		// Query time and trip time are not counted
-		$nowUnix = microtime( true );
 		// Do not bother starting implicit transactions here
 		$this->clearFlag( self::DBO_TRX, self::REMEMBER_PRIOR );
 		try {
@@ -802,7 +781,7 @@ abstract class DatabaseMysqlBase extends Database {
 			$this->restoreFlags();
 		}
 
-		return [ $row ? $row->ts : null, $nowUnix ];
+		return [ $row ? $row->ts : null, microtime( true ) ];
 	}
 
 	protected function getApproximateLagStatus() {
@@ -998,8 +977,8 @@ abstract class DatabaseMysqlBase extends Database {
 	}
 
 	/**
-	 * @param string &$sql
-	 * @param string &$newLine
+	 * @param string $sql
+	 * @param string $newLine
 	 * @return bool
 	 */
 	public function streamStatementEnd( &$sql, &$newLine ) {

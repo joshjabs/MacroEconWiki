@@ -97,7 +97,9 @@ abstract class ApiQueryBase extends ApiBase {
 		return $this->mQueryModule;
 	}
 
-	/** @inheritDoc */
+	/**
+	 * @see ApiBase::getParent()
+	 */
 	public function getParent() {
 		return $this->getQuery();
 	}
@@ -119,7 +121,7 @@ abstract class ApiQueryBase extends ApiBase {
 	 * See ApiQuery::getNamedDB() for more information
 	 * @param string $name Name to assign to the database connection
 	 * @param int $db One of the DB_* constants
-	 * @param string|string[] $groups Query groups
+	 * @param array $groups Query groups
 	 * @return IDatabase
 	 */
 	public function selectNamedDB( $name, $db, $groups ) {
@@ -354,6 +356,7 @@ abstract class ApiQueryBase extends ApiBase {
 	 * @return ResultWrapper
 	 */
 	protected function select( $method, $extraQuery = [], array &$hookData = null ) {
+
 		$tables = array_merge(
 			$this->tables,
 			isset( $extraQuery['tables'] ) ? (array)$extraQuery['tables'] : []
@@ -454,13 +457,10 @@ abstract class ApiQueryBase extends ApiBase {
 				'ipb_id',
 				'ipb_by',
 				'ipb_by_text',
+				'ipb_reason',
 				'ipb_expiry',
 				'ipb_timestamp'
 			] );
-			$commentQuery = CommentStore::newKey( 'ipb_reason' )->getJoin();
-			$this->addTables( $commentQuery['tables'] );
-			$this->addFields( $commentQuery['fields'] );
-			$this->addJoinConds( $commentQuery['joins'] );
 		}
 
 		// Don't show hidden names
@@ -479,7 +479,7 @@ abstract class ApiQueryBase extends ApiBase {
 	/**
 	 * Add information (title and namespace) about a Title object to a
 	 * result array
-	 * @param array &$arr Result array à la ApiResult
+	 * @param array $arr Result array à la ApiResult
 	 * @param Title $title
 	 * @param string $prefix Module prefix
 	 */

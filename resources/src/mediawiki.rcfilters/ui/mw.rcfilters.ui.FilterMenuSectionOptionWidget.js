@@ -2,7 +2,6 @@
 	/**
 	 * A widget representing a menu section for filter groups
 	 *
-	 * @class
 	 * @extends OO.ui.MenuSectionOptionWidget
 	 *
 	 * @constructor
@@ -73,6 +72,7 @@
 				classes: [ 'mw-rcfilters-ui-filterMenuSectionOptionWidget-whatsThisButton' ],
 				flags: [ 'progressive' ],
 				popup: {
+					$autoCloseIgnore: this.$element.add( this.$overlay ),
 					padded: false,
 					align: 'center',
 					position: 'above',

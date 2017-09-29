@@ -47,7 +47,7 @@
 			var modules = inspect.getLoadedModules(),
 				graph = {};
 
-			modules.forEach( function ( moduleName ) {
+			$.each( modules, function ( moduleIndex, moduleName ) {
 				var dependencies = mw.loader.moduleRegistry[ moduleName ].dependencies || [];
 
 				if ( !hasOwn.call( graph, moduleName ) ) {
@@ -164,7 +164,7 @@
 		 * @return {Array} List of module names
 		 */
 		getLoadedModules: function () {
-			return mw.loader.getModuleNames().filter( function ( module ) {
+			return $.grep( mw.loader.getModuleNames(), function ( module ) {
 				return mw.loader.getState( module ) === 'ready';
 			} );
 		},
@@ -183,7 +183,6 @@
 				// Use Function.prototype#call to force an exception on Firefox,
 				// which doesn't define console#table but doesn't complain if you
 				// try to invoke it.
-				// eslint-disable-next-line no-useless-call
 				console.table.call( console, data );
 				return;
 			} catch ( e ) {}
@@ -206,7 +205,7 @@
 				Array.prototype.slice.call( arguments ) :
 				$.map( inspect.reports, function ( v, k ) { return k; } );
 
-			reports.forEach( function ( name ) {
+			$.each( reports, function ( index, name ) {
 				inspect.dumpTable( inspect.reports[ name ]() );
 			} );
 		},
@@ -224,7 +223,7 @@
 			 */
 			size: function () {
 				// Map each module to a descriptor object.
-				var modules = inspect.getLoadedModules().map( function ( module ) {
+				var modules = $.map( inspect.getLoadedModules(), function ( module ) {
 					return {
 						name: module,
 						size: inspect.getModuleSize( module )
@@ -235,7 +234,7 @@
 				sortByProperty( modules, 'size', true );
 
 				// Convert size to human-readable string.
-				modules.forEach( function ( module ) {
+				$.each( modules, function ( i, module ) {
 					module.sizeInBytes = module.size;
 					module.size = humanSize( module.size );
 				} );
@@ -252,7 +251,7 @@
 			css: function () {
 				var modules = [];
 
-				inspect.getLoadedModules().forEach( function ( name ) {
+				$.each( inspect.getLoadedModules(), function ( index, name ) {
 					var css, stats, module = mw.loader.moduleRegistry[ name ];
 
 					try {
@@ -306,7 +305,7 @@
 				pattern = new RegExp( mw.RegExp.escape( pattern ), 'g' );
 			}
 
-			return inspect.getLoadedModules().filter( function ( moduleName ) {
+			return $.grep( inspect.getLoadedModules(), function ( moduleName ) {
 				var module = mw.loader.moduleRegistry[ moduleName ];
 
 				// Grep module's JavaScript

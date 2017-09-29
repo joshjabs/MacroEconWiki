@@ -64,7 +64,7 @@ class MoveBatch extends Maintenance {
 		$user = $this->getOption( 'u', false );
 		$reason = $this->getOption( 'r', '' );
 		$interval = $this->getOption( 'i', 0 );
-		$noredirects = $this->hasOption( 'noredirects' );
+		$noredirects = $this->getOption( 'noredirects', false );
 		if ( $this->hasArg() ) {
 			$file = fopen( $this->getArg(), 'r' );
 		} else {

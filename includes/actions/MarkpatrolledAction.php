@@ -85,7 +85,6 @@ class MarkpatrolledAction extends FormAction {
 	}
 
 	/**
-	 * @param array $data
 	 * @return bool|array True for success, false for didn't-try, array of errors on failure
 	 */
 	public function onSubmit( $data ) {

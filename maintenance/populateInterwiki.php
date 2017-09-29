@@ -56,7 +56,7 @@ TEXT
 	}
 
 	public function execute() {
-		$force = $this->hasOption( 'force' );
+		$force = $this->getOption( 'force', false );
 		$this->source = $this->getOption( 'source', 'https://en.wikipedia.org/w/api.php' );
 
 		$data = $this->fetchLinks();

@@ -20,6 +20,7 @@
  * @since 1.21
  * @file
  * @ingroup SpecialPage
+ * @author Brad Jorsch
  */
 
 /**
@@ -28,26 +29,8 @@
  * @since 1.21
  */
 class SpecialPagesWithProp extends QueryPage {
-
-	/**
-	 * @var string|null
-	 */
 	private $propName = null;
-
-	/**
-	 * @var string[]|null
-	 */
 	private $existingPropNames = null;
-
-	/**
-	 * @var bool
-	 */
-	private $reverse = false;
-
-	/**
-	 * @var bool
-	 */
-	private $sortByValue = false;
 
 	function __construct( $name = 'PagesWithProp' ) {
 		parent::__construct( $name );
@@ -64,8 +47,6 @@ class SpecialPagesWithProp extends QueryPage {
 
 		$request = $this->getRequest();
 		$propname = $request->getVal( 'propname', $par );
-		$this->reverse = $request->getBool( 'reverse' );
-		$this->sortByValue = $request->getBool( 'sortbyvalue' );
 
 		$propnames = $this->getExistingPropNames();
 
@@ -78,20 +59,6 @@ class SpecialPagesWithProp extends QueryPage {
 				'label-message' => 'pageswithprop-prop',
 				'required' => true,
 			],
-			'reverse' => [
-				'type' => 'check',
-				'name' => 'reverse',
-				'default' => $this->reverse,
-				'label-message' => 'pageswithprop-reverse',
-				'required' => false,
-			],
-			'sortbyvalue' => [
-				'type' => 'check',
-				'name' => 'sortbyvalue',
-				'default' => $this->sortByValue,
-				'label-message' => 'pageswithprop-sortbyvalue',
-				'required' => false,
-			]
 		], $this->getContext() );
 		$form->setMethod( 'get' );
 		$form->setSubmitCallback( [ $this, 'onSubmit' ] );
@@ -156,18 +123,7 @@ class SpecialPagesWithProp extends QueryPage {
 	}
 
 	function getOrderFields() {
-		$sort = [ 'page_id' ];
-		if ( $this->sortByValue ) {
-			array_unshift( $sort, 'pp_sortkey' );
-		}
-		return $sort;
-	}
-
-	/**
-	 * @return bool
-	 */
-	public function sortDescending() {
-		return !$this->reverse;
+		return [ 'page_id' ];
 	}
 
 	/**

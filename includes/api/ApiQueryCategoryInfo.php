@@ -47,7 +47,7 @@ class ApiQueryCategoryInfo extends ApiQueryBase {
 		$titles = $this->getPageSet()->getGoodAndMissingTitles();
 		$cattitles = [];
 		foreach ( $categories as $c ) {
-			/** @var Title $t */
+			/** @var $t Title */
 			$t = $titles[$c];
 			$cattitles[$c] = $t->getDBkey();
 		}

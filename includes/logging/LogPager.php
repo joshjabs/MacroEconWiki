@@ -2,7 +2,7 @@
 /**
  * Contain classes to list log entries
  *
- * Copyright © 2004 Brion Vibber <brion@pobox.com>
+ * Copyright © 2004 Brion Vibber <brion@pobox.com>, 2008 Aaron Schulz
  * https://www.mediawiki.org/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,8 @@ class LogPager extends ReverseChronologicalPager {
 	public $mLogEventsList;
 
 	/**
+	 * Constructor
+	 *
 	 * @param LogEventsList $list
 	 * @param string|array $types Log types to show
 	 * @param string $performer The user who made the log entries
@@ -303,13 +305,14 @@ class LogPager extends ReverseChronologicalPager {
 		$options = $basic['options'];
 		$joins = $basic['join_conds'];
 
+		$index = [];
 		# Add log_search table if there are conditions on it.
 		# This filters the results to only include log rows that have
 		# log_search records with the specified ls_field and ls_value values.
 		if ( array_key_exists( 'ls_field', $this->mConds ) ) {
 			$tables[] = 'log_search';
-			$options['IGNORE INDEX'] = [ 'log_search' => 'ls_log_id' ];
-			$options['USE INDEX'] = [ 'logging' => 'PRIMARY' ];
+			$index['log_search'] = 'ls_field_val';
+			$index['logging'] = 'PRIMARY';
 			if ( !$this->hasEqualsClause( 'ls_field' )
 				|| !$this->hasEqualsClause( 'ls_value' )
 			) {
@@ -318,6 +321,9 @@ class LogPager extends ReverseChronologicalPager {
 				# no duplicate log rows. Otherwise, we need to remove the duplicates.
 				$options[] = 'DISTINCT';
 			}
+		}
+		if ( count( $index ) ) {
+			$options['USE INDEX'] = $index;
 		}
 		# Don't show duplicate rows when using log_search
 		$joins['log_search'] = [ 'INNER JOIN', 'ls_log_id=log_id' ];

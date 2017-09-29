@@ -55,10 +55,6 @@ class WatchedItemQueryService {
 	/** @var WatchedItemQueryServiceExtension[]|null */
 	private $extensions = null;
 
-	/**
-	 * @var CommentStore|null */
-	private $commentStore = null;
-
 	public function __construct( LoadBalancer $loadBalancer ) {
 		$this->loadBalancer = $loadBalancer;
 	}
@@ -80,13 +76,6 @@ class WatchedItemQueryService {
 	 */
 	private function getConnection() {
 		return $this->loadBalancer->getConnectionRef( DB_REPLICA, [ 'watchlist' ] );
-	}
-
-	private function getCommentStore() {
-		if ( !$this->commentStore ) {
-			$this->commentStore = new CommentStore( 'rc_comment' );
-		}
-		return $this->commentStore;
 	}
 
 	/**
@@ -183,9 +172,13 @@ class WatchedItemQueryService {
 			);
 		}
 
+		$tables = [ 'recentchanges', 'watchlist' ];
+		if ( !$options['allRevisions'] ) {
+			$tables[] = 'page';
+		}
+
 		$db = $this->getConnection();
 
-		$tables = $this->getWatchedItemsWithRCInfoQueryTables( $options );
 		$fields = $this->getWatchedItemsWithRCInfoQueryFields( $options );
 		$conds = $this->getWatchedItemsWithRCInfoQueryConds( $db, $user, $options );
 		$dbOptions = $this->getWatchedItemsWithRCInfoQueryDbOptions( $options );
@@ -320,22 +313,11 @@ class WatchedItemQueryService {
 		$allFields = get_object_vars( $row );
 		$rcKeys = array_filter(
 			array_keys( $allFields ),
-			function ( $key ) {
+			function( $key ) {
 				return substr( $key, 0, 3 ) === 'rc_';
 			}
 		);
 		return array_intersect_key( $allFields, array_flip( $rcKeys ) );
-	}
-
-	private function getWatchedItemsWithRCInfoQueryTables( array $options ) {
-		$tables = [ 'recentchanges', 'watchlist' ];
-		if ( !$options['allRevisions'] ) {
-			$tables[] = 'page';
-		}
-		if ( in_array( self::INCLUDE_COMMENT, $options['includeFields'] ) ) {
-			$tables += $this->getCommentStore()->getJoin()['tables'];
-		}
-		return $tables;
 	}
 
 	private function getWatchedItemsWithRCInfoQueryFields( array $options ) {
@@ -373,7 +355,7 @@ class WatchedItemQueryService {
 			$fields[] = 'rc_user';
 		}
 		if ( in_array( self::INCLUDE_COMMENT, $options['includeFields'] ) ) {
-			$fields += $this->getCommentStore()->getJoin()['fields'];
+			$fields[] = 'rc_comment';
 		}
 		if ( in_array( self::INCLUDE_PATROL_INFO, $options['includeFields'] ) ) {
 			$fields = array_merge( $fields, [ 'rc_patrolled', 'rc_log_type' ] );
@@ -674,9 +656,6 @@ class WatchedItemQueryService {
 		];
 		if ( !$options['allRevisions'] ) {
 			$joinConds['page'] = [ 'LEFT JOIN', 'rc_cur_id=page_id' ];
-		}
-		if ( in_array( self::INCLUDE_COMMENT, $options['includeFields'] ) ) {
-			$joinConds += $this->getCommentStore()->getJoin()['joins'];
 		}
 		return $joinConds;
 	}

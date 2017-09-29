@@ -6,6 +6,7 @@ use HtmlArmor;
 use MediaWiki\Linker\LinkRenderer;
 use SearchResult;
 use SpecialSearch;
+use Title;
 
 /**
  * Renders a simple one-line result

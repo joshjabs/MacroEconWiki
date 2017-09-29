@@ -61,6 +61,7 @@ class UploadFromUrlTestSuite extends PHPUnit_Framework_TestSuite {
 		DeferredUpdates::clearPendingUpdates();
 		$wgMemc = wfGetMainCache();
 		$messageMemc = wfGetMessageCacheStorage();
+		$parserMemc = wfGetParserCacheStorage();
 
 		RequestContext::resetMain();
 		$context = RequestContext::getMain();

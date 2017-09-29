@@ -174,6 +174,7 @@ class CoreParserFunctions {
 			$magicWords = new MagicWordArray( [ 'url_path', 'url_query', 'url_wiki' ] );
 		}
 		switch ( $magicWords->matchStartToEnd( $arg ) ) {
+
 			// Encode as though it's a wiki page, '_' for ' '.
 			case 'url_wiki':
 				$func = 'wfUrlencode';
@@ -582,14 +583,14 @@ class CoreParserFunctions {
 	}
 	public static function talkspace( $parser, $title = null ) {
 		$t = Title::newFromText( $title );
-		if ( is_null( $t ) || !$t->canHaveTalkPage() ) {
+		if ( is_null( $t ) || !$t->canTalk() ) {
 			return '';
 		}
 		return str_replace( '_', ' ', $t->getTalkNsText() );
 	}
 	public static function talkspacee( $parser, $title = null ) {
 		$t = Title::newFromText( $title );
-		if ( is_null( $t ) || !$t->canHaveTalkPage() ) {
+		if ( is_null( $t ) || !$t->canTalk() ) {
 			return '';
 		}
 		return wfUrlencode( $t->getTalkNsText() );
@@ -632,14 +633,14 @@ class CoreParserFunctions {
 	}
 	public static function fullpagename( $parser, $title = null ) {
 		$t = Title::newFromText( $title );
-		if ( is_null( $t ) || !$t->canHaveTalkPage() ) {
+		if ( is_null( $t ) || !$t->canTalk() ) {
 			return '';
 		}
 		return wfEscapeWikiText( $t->getPrefixedText() );
 	}
 	public static function fullpagenamee( $parser, $title = null ) {
 		$t = Title::newFromText( $title );
-		if ( is_null( $t ) || !$t->canHaveTalkPage() ) {
+		if ( is_null( $t ) || !$t->canTalk() ) {
 			return '';
 		}
 		return wfEscapeWikiText( $t->getPrefixedURL() );
@@ -688,14 +689,14 @@ class CoreParserFunctions {
 	}
 	public static function talkpagename( $parser, $title = null ) {
 		$t = Title::newFromText( $title );
-		if ( is_null( $t ) || !$t->canHaveTalkPage() ) {
+		if ( is_null( $t ) || !$t->canTalk() ) {
 			return '';
 		}
 		return wfEscapeWikiText( $t->getTalkPage()->getPrefixedText() );
 	}
 	public static function talkpagenamee( $parser, $title = null ) {
 		$t = Title::newFromText( $title );
-		if ( is_null( $t ) || !$t->canHaveTalkPage() ) {
+		if ( is_null( $t ) || !$t->canTalk() ) {
 			return '';
 		}
 		return wfEscapeWikiText( $t->getTalkPage()->getPrefixedURL() );

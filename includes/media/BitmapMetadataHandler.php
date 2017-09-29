@@ -160,7 +160,6 @@ class BitmapMetadataHandler {
 		$meta = new self();
 
 		$seg = JpegMetadataExtractor::segmentSplitter( $filename );
-
 		if ( isset( $seg['COM'] ) && isset( $seg['COM'][0] ) ) {
 			$meta->addMetadata( [ 'JPEGFileComment' => $seg['COM'] ], 'native' );
 		}
@@ -183,8 +182,9 @@ class BitmapMetadataHandler {
 				$meta->addMetadata( $array, $type );
 			}
 		}
-
-		$meta->getExif( $filename, isset( $seg['byteOrder'] ) ? $seg['byteOrder'] : 'BE' );
+		if ( isset( $seg['byteOrder'] ) ) {
+			$meta->getExif( $filename, $seg['byteOrder'] );
+		}
 
 		return $meta->getMetadataArray();
 	}
@@ -230,6 +230,7 @@ class BitmapMetadataHandler {
 	 * @return array Metadata array
 	 */
 	public static function GIF( $filename ) {
+
 		$meta = new self();
 		$baseArray = GIFMetadataExtractor::getMetadata( $filename );
 

@@ -59,7 +59,7 @@ unset( $lines );
 
 $lines = explode( "\n", shell_exec( 'git log --format="%aN"' ) );
 foreach ( $lines as $line ) {
-	if ( empty( $line ) ) {
+	if ( empty( $line ) )  {
 		continue;
 	}
 	if ( substr( $line, 0, 5 ) === '[BOT]' ) {
@@ -69,8 +69,7 @@ foreach ( $lines as $line ) {
 }
 
 $contributors = array_keys( $contributors );
-$collator = Collator::create( 'root' );
-$collator->setAttribute( Collator::NUMERIC_COLLATION, Collator::ON );
+$collator = Collator::create( 'uca-default-u-kn' );
 $collator->sort( $contributors );
 array_walk( $contributors, function ( &$v, $k ) {
 	$v = "* {$v}";

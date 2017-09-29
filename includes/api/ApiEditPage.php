@@ -62,8 +62,9 @@ class ApiEditPage extends ApiBase {
 
 				$redirValues = [];
 
-				/** @var Title $newTitle */
+				/** @var $newTitle Title */
 				foreach ( $titles as $id => $newTitle ) {
+
 					if ( !isset( $titles[$id - 1] ) ) {
 						$titles[$id - 1] = $oldTitle;
 					}
@@ -266,7 +267,6 @@ class ApiEditPage extends ApiBase {
 			'wpIgnoreBlankArticle' => true,
 			'wpIgnoreSelfRedirect' => true,
 			'bot' => $params['bot'],
-			'wpUnicodeCheck' => EditPage::UNICODE_CHECK,
 		];
 
 		if ( !is_null( $params['summary'] ) ) {
@@ -360,7 +360,7 @@ class ApiEditPage extends ApiBase {
 		$articleContext->setWikiPage( $pageObj );
 		$articleContext->setUser( $this->getUser() );
 
-		/** @var Article $articleObject */
+		/** @var $articleObject Article */
 		$articleObject = Article::newFromWikiPage( $pageObj, $articleContext );
 
 		$ep = new EditPage( $articleObject );

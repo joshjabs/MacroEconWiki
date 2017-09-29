@@ -12,6 +12,7 @@ class PerRowAugmentor implements ResultSetAugmentor {
 	private $rowAugmentor;
 
 	/**
+	 * PerRowAugmentor constructor.
 	 * @param ResultAugmentor $augmentor Per-result augmentor to use.
 	 */
 	public function __construct( ResultAugmentor $augmentor ) {

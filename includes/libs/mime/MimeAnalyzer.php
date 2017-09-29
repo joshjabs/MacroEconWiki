@@ -529,13 +529,10 @@ EOT;
 			// Formats we recognize magic numbers for
 			'djvu', 'ogx', 'ogg', 'ogv', 'oga', 'spx', 'opus',
 			'mid', 'pdf', 'wmf', 'xcf', 'webm', 'mkv', 'mka',
-			'webp', 'mp3',
+			'webp',
 
 			// XML formats we sure hope we recognize reliably
 			'svg',
-
-			// 3D formats
-			'stl',
 		];
 		return in_array( strtolower( $extension ), $types );
 	}
@@ -673,10 +670,6 @@ EOT;
 			// Multimedia...
 			'MThd'             => 'audio/midi',
 			'OggS'             => 'application/ogg',
-			'ID3'              => 'audio/mpeg',
-			"\xff\xfb"         => 'audio/mpeg', // MPEG-1 layer 3
-			"\xff\xf3"         => 'audio/mpeg', // MPEG-2 layer 3 (lower sample rates)
-			"\xff\xe3"         => 'audio/mpeg', // MPEG-2.5 layer 3 (very low sample rates)
 
 			// Image formats...
 			// Note that WMF may have a bare header, no magic number.
@@ -709,17 +702,8 @@ EOT;
 					$this->logger->info( __METHOD__ . ": recognized file as video/x-matroska\n" );
 					return "video/x-matroska";
 				} elseif ( strncmp( $data, "webm", 4 ) == 0 ) {
-					// XXX HACK look for a video track, if we don't find it, this is an audio file
-					$videotrack = strpos( $head, "\x86\x85V_VP" );
-
-					if ( $videotrack ) {
-						// There is a video track, so this is a video file.
-						$this->logger->info( __METHOD__ . ": recognized file as video/webm\n" );
-						return "video/webm";
-					}
-
-					$this->logger->info( __METHOD__ . ": recognized file as audio/webm\n" );
-					return "audio/webm";
+					$this->logger->info( __METHOD__ . ": recognized file as video/webm\n" );
+					return "video/webm";
 				}
 			}
 			$this->logger->info( __METHOD__ . ": unknown EBML file\n" );
@@ -751,8 +735,8 @@ EOT;
 			( strpos( $head, "<\x00?\x00 " ) !== false ) ||
 			( strpos( $head, "<\x00?\x00\n" ) !== false ) ||
 			( strpos( $head, "<\x00?\x00\t" ) !== false ) ||
-			( strpos( $head, "<\x00?\x00=" ) !== false )
-		) {
+			( strpos( $head, "<\x00?\x00=" ) !== false ) ) {
+
 			$this->logger->info( __METHOD__ . ": recognized $file as application/x-php\n" );
 			return 'application/x-php';
 		}
@@ -814,23 +798,6 @@ EOT;
 		if ( strpos( $tail, "PK\x05\x06" ) !== false ) {
 			$this->logger->info( __METHOD__ . ": ZIP header present in $file\n" );
 			return $this->detectZipType( $head, $tail, $ext );
-		}
-
-		// Check for STL (3D) files
-		// @see https://en.wikipedia.org/wiki/STL_(file_format)
-		if ( $fsize >= 15 &&
-			stripos( $head, 'SOLID ' ) === 0 &&
-			preg_match( '/\RENDSOLID .*$/i', $tail ) ) {
-			// ASCII STL file
-			return 'application/sla';
-		} elseif ( $fsize > 84 ) {
-			// binary STL file
-			$triangles = substr( $head, 80, 4 );
-			$triangles = unpack( 'V', $triangles );
-			$triangles = reset( $triangles );
-			if ( $triangles !== false && $fsize === 84 + ( $triangles * 50 ) ) {
-				return 'application/sla';
-			}
 		}
 
 		MediaWiki\suppressWarnings();
@@ -988,8 +955,18 @@ EOT;
 		$m = null;
 		if ( $callback ) {
 			$m = $callback( $file );
+		} elseif ( function_exists( "finfo_open" ) && function_exists( "finfo_file" ) ) {
+			$mime_magic_resource = finfo_open( FILEINFO_MIME );
+
+			if ( $mime_magic_resource ) {
+				$m = finfo_file( $mime_magic_resource, $file );
+				finfo_close( $mime_magic_resource );
+			} else {
+				$this->logger->info( __METHOD__ .
+					": finfo_open failed on " . FILEINFO_MIME . "!\n" );
+			}
 		} else {
-			$m = mime_content_type( $file );
+			$this->logger->info( __METHOD__ . ": no magic mime detector found!\n" );
 		}
 
 		if ( $m ) {
@@ -1058,6 +1035,7 @@ EOT;
 		// Special code for ogg - detect if it's video (theora),
 		// else label it as sound.
 		if ( $mime == 'application/ogg' && file_exists( $path ) ) {
+
 			// Read a chunk of the file
 			$f = fopen( $path, "rt" );
 			if ( !$f ) {
@@ -1161,15 +1139,6 @@ EOT;
 		}
 
 		return MEDIATYPE_UNKNOWN;
-	}
-
-	/**
-	 * Returns an array of media types (MEDIATYPE_xxx constants)
-	 *
-	 * @return array
-	 */
-	public function getMediaTypes() {
-		return array_keys( $this->mediaTypes );
 	}
 
 	/**

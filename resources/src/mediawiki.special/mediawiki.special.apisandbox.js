@@ -157,15 +157,6 @@
 				this.setIcon( ok ? null : 'alert' );
 				this.setIconTitle( ok ? '' : mw.message( 'apisandbox-alert-field' ).plain() );
 				return $.Deferred().resolve( ok ).promise();
-			},
-			createItemWidget: function ( data, label ) {
-				var item = OO.ui.CapsuleMultiselectWidget.prototype.createItemWidget.call( this, data, label );
-				if ( this.paramInfo.deprecatedvalues &&
-					this.paramInfo.deprecatedvalues.indexOf( data ) >= 0
-				) {
-					item.$element.addClass( 'apihelp-deprecated-value' );
-				}
-				return item;
 			}
 		},
 
@@ -194,7 +185,7 @@
 			multi: function () {
 				var map = this.paramInfo.submodules,
 					v = this.isDisabled() ? this.paramInfo[ 'default' ] : this.getApiValue();
-				return v === undefined || v === '' ? [] : String( v ).split( '|' ).map( function ( v ) {
+				return v === undefined || v === '' ? [] : $.map( String( v ).split( '|' ), function ( v ) {
 					return { value: v, path: map[ v ] };
 				} );
 			}
@@ -346,8 +337,7 @@
 					} else if ( Util.apiBool( pi.multi ) ) {
 						widget = new OO.ui.CapsuleMultiselectWidget( {
 							allowArbitrary: true,
-							allowDuplicates: Util.apiBool( pi.allowsduplicates ),
-							$overlay: $( '#mw-apisandbox-ui' )
+							allowDuplicates: Util.apiBool( pi.allowsduplicates )
 						} );
 						widget.paramInfo = pi;
 						$.extend( widget, WidgetMethods.capsuleWidget );
@@ -371,7 +361,8 @@
 					break;
 
 				case 'text':
-					widget = new OO.ui.MultilineTextInputWidget( {
+					widget = new OO.ui.TextInputWidget( {
+						multiline: true,
 						required: Util.apiBool( pi.required )
 					} );
 					widget.paramInfo = pi;
@@ -468,15 +459,13 @@
 						}
 
 						widget = new OO.ui.CapsuleMultiselectWidget( {
-							menu: { items: items },
-							$overlay: $( '#mw-apisandbox-ui' )
+							menu: { items: items }
 						} );
 						widget.paramInfo = pi;
 						$.extend( widget, WidgetMethods.capsuleWidget );
 					} else {
 						widget = new OO.ui.DropdownWidget( {
-							menu: { items: items },
-							$overlay: $( '#mw-apisandbox-ui' )
+							menu: { items: items }
 						} );
 						widget.paramInfo = pi;
 						$.extend( widget, WidgetMethods.dropdownWidget );
@@ -488,16 +477,8 @@
 						throw new Error( 'Unknown parameter type ' + pi.type );
 					}
 
-					items = pi.type.map( function ( v ) {
-						var config = {
-							data: String( v ),
-							label: String( v ),
-							classes: []
-						};
-						if ( pi.deprecatedvalues && pi.deprecatedvalues.indexOf( v ) >= 0 ) {
-							config.classes.push( 'apihelp-deprecated-value' );
-						}
-						return new OO.ui.MenuOptionWidget( config );
+					items = $.map( pi.type, function ( v ) {
+						return new OO.ui.MenuOptionWidget( { data: String( v ), label: String( v ) } );
 					} );
 					if ( Util.apiBool( pi.multi ) ) {
 						if ( pi.allspecifier !== undefined ) {
@@ -508,8 +489,7 @@
 						}
 
 						widget = new OO.ui.CapsuleMultiselectWidget( {
-							menu: { items: items },
-							$overlay: $( '#mw-apisandbox-ui' )
+							menu: { items: items }
 						} );
 						widget.paramInfo = pi;
 						$.extend( widget, WidgetMethods.capsuleWidget );
@@ -519,22 +499,13 @@
 						}
 					} else {
 						widget = new OO.ui.DropdownWidget( {
-							menu: { items: items },
-							$overlay: $( '#mw-apisandbox-ui' )
+							menu: { items: items }
 						} );
 						widget.paramInfo = pi;
 						$.extend( widget, WidgetMethods.dropdownWidget );
 						if ( Util.apiBool( pi.submodules ) ) {
 							widget.getSubmodules = WidgetMethods.submoduleWidget.single;
-							widget.getMenu().on( 'select', ApiSandbox.updateUI );
-						}
-						if ( pi.deprecatedvalues ) {
-							widget.getMenu().on( 'select', function ( item ) {
-								this.$element.toggleClass(
-									'apihelp-deprecated-value',
-									pi.deprecatedvalues.indexOf( item.data ) >= 0
-								);
-							}, [], widget );
+							widget.getMenu().on( 'choose', ApiSandbox.updateUI );
 						}
 					}
 
@@ -564,7 +535,6 @@
 				widget = new OO.ui.CapsuleMultiselectWidget( {
 					allowArbitrary: true,
 					allowDuplicates: Util.apiBool( pi.allowsduplicates ),
-					$overlay: $( '#mw-apisandbox-ui' ),
 					popup: {
 						classes: [ 'mw-apisandbox-popup' ],
 						$content: $content
@@ -683,9 +653,10 @@
 					new OO.ui.MenuOptionWidget( {
 						label: Util.parseMsg( 'apisandbox-request-format-json-label' ),
 						data: new OO.ui.FieldLayout(
-							jsonInput = new OO.ui.MultilineTextInputWidget( {
+							jsonInput = new OO.ui.TextInputWidget( {
 								classes: [ 'mw-apisandbox-textInputCode' ],
 								readOnly: true,
+								multiline: true,
 								autosize: true,
 								maxRows: 6,
 								value: JSON.stringify( displayParams, null, '\t' )
@@ -1060,10 +1031,9 @@
 
 				if ( !formatDropdown ) {
 					formatDropdown = new OO.ui.DropdownWidget( {
-						menu: { items: [] },
-						$overlay: $( '#mw-apisandbox-ui' )
+						menu: { items: [] }
 					} );
-					formatDropdown.getMenu().on( 'select', Util.onFormatDropdownChange );
+					formatDropdown.getMenu().on( 'choose', Util.onFormatDropdownChange );
 				}
 
 				menu = formatDropdown.getMenu();
@@ -1072,7 +1042,7 @@
 					selectedLabel = selectedLabel.text();
 				}
 				menu.clearItems().addItems( formatItems );
-				menu.chooseItem( menu.getItemFromLabel( selectedLabel ) || menu.findFirstSelectableItem() );
+				menu.chooseItem( menu.getItemFromLabel( selectedLabel ) || menu.getFirstSelectableItem() );
 
 				// Fire the event to update field visibilities
 				Util.onFormatDropdownChange();
@@ -1123,29 +1093,29 @@
 					}
 				} )
 					.then( null, function ( code, data, result, jqXHR ) {
-						var deferred = $.Deferred();
-
 						if ( code !== 'http' ) {
 							// Not really an error, work around mw.Api thinking it is.
-							deferred.resolve( result, jqXHR );
-						} else {
-							// Just forward it.
-							deferred.reject.apply( deferred, arguments );
+							return $.Deferred()
+								.resolve( result, jqXHR )
+								.promise();
 						}
-						return deferred.promise();
+						return this;
 					} )
-					.then( function ( data, jqXHR ) {
+					.fail( function ( code, data ) {
+						var details = 'HTTP error: ' + data.exception;
+						$result.empty()
+							.append(
+								new OO.ui.LabelWidget( {
+									label: mw.message( 'apisandbox-results-error', details ).text(),
+									classes: [ 'error' ]
+								} ).$element
+							);
+					} )
+					.done( function ( data, jqXHR ) {
 						var m, loadTime, button, clear,
-							ct = jqXHR.getResponseHeader( 'Content-Type' ),
-							loginSuppressed = jqXHR.getResponseHeader( 'MediaWiki-Login-Suppressed' ) || 'false';
+							ct = jqXHR.getResponseHeader( 'Content-Type' );
 
 						$result.empty();
-						if ( loginSuppressed !== 'false' ) {
-							$( '<div>' )
-								.addClass( 'warning' )
-								.append( Util.parseMsg( 'apisandbox-results-login-suppressed' ) )
-								.appendTo( $result );
-						}
 						if ( /^text\/mediawiki-api-prettyprint-wrapped(?:;|$)/.test( ct ) ) {
 							data = JSON.parse( data );
 							if ( data.modules.length ) {
@@ -1191,8 +1161,7 @@
 										icon: 'info',
 										popup: {
 											$content: $( '<div>' ).append( Util.parseMsg( 'apisandbox-continue-help' ) ),
-											padded: true,
-											width: 'auto'
+											padded: true
 										}
 									} ).$element
 								)
@@ -1218,15 +1187,6 @@
 								.on( 'click', button.setDisabled, [ true ], button )
 								.$element.appendTo( $result );
 						}
-					}, function ( code, data ) {
-						var details = 'HTTP error: ' + data.exception;
-						$result.empty()
-							.append(
-								new OO.ui.LabelWidget( {
-									label: mw.message( 'apisandbox-results-error', details ).text(),
-									classes: [ 'error' ]
-								} ).$element
-							);
 					} );
 			} );
 		},
@@ -1370,7 +1330,7 @@
 					nooptional: true
 				} );
 				button = new OO.ui.ButtonWidget( {
-					icon: 'trash',
+					icon: 'remove',
 					flags: 'destructive'
 				} );
 				layout = new OO.ui.ActionFieldLayout(
@@ -1397,7 +1357,7 @@
 
 		Util.fetchModuleInfo( this.apiModule )
 			.done( function ( pi ) {
-				var prefix, i, j, descriptionContainer, widget, widgetField, helpField, tmp, flag, count,
+				var prefix, i, j, descriptionContainer, widget, $widgetLabel, widgetField, helpField, tmp, flag, count,
 					items = [],
 					deprecatedItems = [],
 					buttons = [],
@@ -1413,7 +1373,8 @@
 						if ( $.isFunction( f.focus ) ) {
 							f.focus();
 						}
-					};
+					},
+					doNothing = function () {};
 
 				// This is something of a hack. We always want the 'format' and
 				// 'action' parameters from the main module to be specified,
@@ -1459,8 +1420,6 @@
 						label: mw.message( 'apisandbox-helpurls' ).text(),
 						icon: 'help',
 						popup: {
-							width: 'auto',
-							padded: true,
 							$content: $( '<ul>' ).append( $.map( pi.helpurls, function ( link ) {
 								return $( '<li>' ).append( $( '<a>', {
 									href: link,
@@ -1478,8 +1437,6 @@
 						label: mw.message( 'apisandbox-examples' ).text(),
 						icon: 'code',
 						popup: {
-							width: 'auto',
-							padded: true,
 							$content: $( '<ul>' ).append( $.map( pi.examples, function ( example ) {
 								var a = $( '<a>', {
 									href: '#' + example.query,
@@ -1510,16 +1467,10 @@
 						}
 
 						descriptionContainer = $( '<div>' );
-
-						tmp = Util.parseHTML( pi.parameters[ i ].description );
-						tmp.filter( 'dl' ).makeCollapsible( {
-							collapsed: true
-						} ).children( '.mw-collapsible-toggle' ).each( function () {
-							var $this = $( this );
-							$this.parent().prev( 'p' ).append( $this );
-						} );
-						descriptionContainer.append( $( '<div>', { addClass: 'description', append: tmp } ) );
-
+						descriptionContainer.append( $( '<div>', {
+							addClass: 'description',
+							append: Util.parseHTML( pi.parameters[ i ].description )
+						} ) );
 						if ( pi.parameters[ i ].info && pi.parameters[ i ].info.length ) {
 							for ( j = 0; j < pi.parameters[ i ].info.length; j++ ) {
 								descriptionContainer.append( $( '<div>', {
@@ -1622,24 +1573,26 @@
 							}
 						);
 
+						$widgetLabel = $( '<span>' );
 						widgetField = new OO.ui.FieldLayout(
 							widget,
 							{
 								align: 'left',
 								classes: [ 'mw-apisandbox-widget-field' ],
-								label: prefix + pi.parameters[ i ].name
+								label: prefix + pi.parameters[ i ].name,
+								$label: $widgetLabel
 							}
 						);
 
-						// We need our own click handler on the widget label to
-						// turn off the disablement.
-						widgetField.$label.on( 'click', widgetLabelOnClick.bind( widgetField ) );
+						// FieldLayout only does click for InputElement
+						// widgets. So supply our own click handler.
+						$widgetLabel.on( 'click', widgetLabelOnClick.bind( widgetField ) );
 
 						// Don't grey out the label when the field is disabled,
 						// it makes it too hard to read and our "disabled"
 						// isn't really disabled.
 						widgetField.onFieldDisable( false );
-						widgetField.onFieldDisable = $.noop;
+						widgetField.onFieldDisable = doNothing;
 
 						if ( Util.apiBool( pi.parameters[ i ].deprecated ) ) {
 							deprecatedItems.push( widgetField, helpField );

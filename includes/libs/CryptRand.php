@@ -234,6 +234,7 @@ class CryptRand {
 	 * @return string Raw binary random data
 	 */
 	public function generate( $bytes, $forceStrong = false ) {
+
 		$bytes = floor( $bytes );
 		static $buffer = '';
 		if ( is_null( $this->strong ) ) {

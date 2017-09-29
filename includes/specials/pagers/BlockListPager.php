@@ -79,7 +79,7 @@ class BlockListPager extends TablePager {
 			}
 		}
 
-		/** @var object $row */
+		/** @var $row object */
 		$row = $this->mCurrentRow;
 
 		$language = $this->getLanguage();
@@ -173,7 +173,6 @@ class BlockListPager extends TablePager {
 				break;
 
 			case 'ipb_reason':
-				$value = CommentStore::newKey( 'ipb_reason' )->getComment( $row )->text;
 				$formatted = Linker::formatComment( $value );
 				break;
 
@@ -209,10 +208,8 @@ class BlockListPager extends TablePager {
 	}
 
 	function getQueryInfo() {
-		$commentQuery = CommentStore::newKey( 'ipb_reason' )->getJoin();
-
 		$info = [
-			'tables' => [ 'ipblocks', 'user' ] + $commentQuery['tables'],
+			'tables' => [ 'ipblocks', 'user' ],
 			'fields' => [
 				'ipb_id',
 				'ipb_address',
@@ -220,6 +217,7 @@ class BlockListPager extends TablePager {
 				'ipb_by',
 				'ipb_by_text',
 				'by_user_name' => 'user_name',
+				'ipb_reason',
 				'ipb_timestamp',
 				'ipb_auto',
 				'ipb_anon_only',
@@ -231,9 +229,9 @@ class BlockListPager extends TablePager {
 				'ipb_deleted',
 				'ipb_block_email',
 				'ipb_allow_usertalk',
-			] + $commentQuery['fields'],
+			],
 			'conds' => $this->conds,
-			'join_conds' => [ 'user' => [ 'LEFT JOIN', 'user_id = ipb_by' ] ] + $commentQuery['joins']
+			'join_conds' => [ 'user' => [ 'LEFT JOIN', 'user_id = ipb_by' ] ]
 		];
 
 		# Filter out any expired blocks
@@ -246,26 +244,6 @@ class BlockListPager extends TablePager {
 		}
 
 		return $info;
-	}
-
-	/**
-	 * Get total number of autoblocks at any given time
-	 *
-	 * @return int Total number of unexpired active autoblocks
-	 */
-	function getTotalAutoblocks() {
-		$dbr = $this->getDatabase();
-		$res = $dbr->selectField( 'ipblocks',
-			[ 'COUNT(*) AS totalautoblocks' ],
-			[
-				'ipb_auto' => '1',
-				'ipb_expiry >= ' . $dbr->addQuotes( $dbr->timestamp() ),
-			]
-		);
-		if ( $res ) {
-			return $res;
-		}
-		return 0; // We found nothing
 	}
 
 	protected function getTableClass() {

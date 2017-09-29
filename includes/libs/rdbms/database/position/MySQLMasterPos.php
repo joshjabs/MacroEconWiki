@@ -24,7 +24,7 @@ class MySQLMasterPos implements DBMasterPos {
 
 	/**
 	 * @param string $file Binlog file name
-	 * @param int $pos Binlog position
+	 * @param integer $pos Binlog position
 	 * @param string $gtid Comma separated GTID set [optional]
 	 */
 	function __construct( $file, $pos, $gtid = '' ) {

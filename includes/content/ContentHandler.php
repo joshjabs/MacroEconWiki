@@ -136,7 +136,7 @@ abstract class ContentHandler {
 			$modelId = $title->getContentModel();
 		}
 
-		$handler = self::getForModelID( $modelId );
+		$handler = ContentHandler::getForModelID( $modelId );
 
 		return $handler->unserializeContent( $text, $format );
 	}
@@ -240,7 +240,7 @@ abstract class ContentHandler {
 	public static function getForTitle( Title $title ) {
 		$modelId = $title->getContentModel();
 
-		return self::getForModelID( $modelId );
+		return ContentHandler::getForModelID( $modelId );
 	}
 
 	/**
@@ -256,7 +256,7 @@ abstract class ContentHandler {
 	public static function getForContent( Content $content ) {
 		$modelId = $content->getModel();
 
-		return self::getForModelID( $modelId );
+		return ContentHandler::getForModelID( $modelId );
 	}
 
 	/**
@@ -293,8 +293,8 @@ abstract class ContentHandler {
 	public static function getForModelID( $modelId ) {
 		global $wgContentHandlers;
 
-		if ( isset( self::$handlers[$modelId] ) ) {
-			return self::$handlers[$modelId];
+		if ( isset( ContentHandler::$handlers[$modelId] ) ) {
+			return ContentHandler::$handlers[$modelId];
 		}
 
 		if ( empty( $wgContentHandlers[$modelId] ) ) {
@@ -327,9 +327,9 @@ abstract class ContentHandler {
 		wfDebugLog( 'ContentHandler', 'Created handler for ' . $modelId
 			. ': ' . get_class( $handler ) );
 
-		self::$handlers[$modelId] = $handler;
+		ContentHandler::$handlers[$modelId] = $handler;
 
-		return self::$handlers[$modelId];
+		return ContentHandler::$handlers[$modelId];
 	}
 
 	/**
@@ -372,7 +372,7 @@ abstract class ContentHandler {
 		$formats = [];
 
 		foreach ( $wgContentHandlers as $model => $class ) {
-			$handler = self::getForModelID( $model );
+			$handler = ContentHandler::getForModelID( $model );
 			$formats = array_merge( $formats, $handler->getSupportedFormats() );
 		}
 
@@ -619,8 +619,8 @@ abstract class ContentHandler {
 	 */
 	public function createDifferenceEngine( IContextSource $context, $old = 0, $new = 0,
 		$rcid = 0, // FIXME: Deprecated, no longer used
-		$refreshCache = false, $unhide = false
-	) {
+		$refreshCache = false, $unhide = false ) {
+
 		// hook: get difference engine
 		$differenceEngine = null;
 		if ( !Hooks::run( 'GetDifferenceEngine',
@@ -1007,22 +1007,22 @@ abstract class ContentHandler {
 	 * @return ParserOptions
 	 */
 	public function makeParserOptions( $context ) {
-		global $wgContLang;
+		global $wgContLang, $wgEnableParserLimitReporting;
 
 		if ( $context instanceof IContextSource ) {
-			$user = $context->getUser();
-			$lang = $context->getLanguage();
+			$options = ParserOptions::newFromContext( $context );
 		} elseif ( $context instanceof User ) { // settings per user (even anons)
-			$user = $context;
-			$lang = null;
+			$options = ParserOptions::newFromUser( $context );
 		} elseif ( $context === 'canonical' ) { // canonical settings
-			$user = new User;
-			$lang = $wgContLang;
+			$options = ParserOptions::newFromUserAndLang( new User, $wgContLang );
 		} else {
 			throw new MWException( "Bad context for parser options: $context" );
 		}
 
-		return ParserOptions::newCanonical( $user, $lang );
+		$options->enableLimitReport( $wgEnableParserLimitReporting ); // show inclusion/loop reports
+		$options->setTidy( true ); // fix bad HTML
+
+		return $options;
 	}
 
 	/**
@@ -1134,10 +1134,10 @@ abstract class ContentHandler {
 
 	/**
 	 * Add new field definition to array.
-	 * @param SearchIndexField[] &$fields
-	 * @param SearchEngine $engine
-	 * @param string $name
-	 * @param int $type
+	 * @param SearchIndexField[] $fields
+	 * @param SearchEngine       $engine
+	 * @param string             $name
+	 * @param int                $type
 	 * @return SearchIndexField[] new field defs
 	 * @since 1.28
 	 */
@@ -1151,7 +1151,7 @@ abstract class ContentHandler {
 	 * as representation of this document.
 	 * Overriding class should call parent function or take care of calling
 	 * the SearchDataForIndex hook.
-	 * @param WikiPage $page Page to index
+	 * @param WikiPage     $page Page to index
 	 * @param ParserOutput $output
 	 * @param SearchEngine $engine Search engine for which we are indexing
 	 * @return array Map of name=>value for fields
@@ -1190,7 +1190,7 @@ abstract class ContentHandler {
 	 *
 	 * Specific content handlers may override it if they need different content handling.
 	 *
-	 * @param WikiPage $page
+	 * @param WikiPage    $page
 	 * @param ParserCache $cache
 	 * @return ParserOutput
 	 */

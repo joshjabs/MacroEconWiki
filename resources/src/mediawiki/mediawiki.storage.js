@@ -32,8 +32,7 @@
 	 * Retrieve value from device storage.
 	 *
 	 * @param {string} key Key of item to retrieve
-	 * @return {string|null|boolean} String value, null if no value exists, or false
-	 *  if localStorage is not available.
+	 * @return {string|boolean} False when localStorage not available, otherwise string
 	 */
 	SafeStorage.prototype.get = function ( key ) {
 		try {

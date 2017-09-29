@@ -31,6 +31,7 @@ class PackedOverlayImageGallery extends PackedImageGallery {
 	 * @return string
 	 */
 	protected function wrapGalleryText( $galleryText, $thumb ) {
+
 		// If we have no text, do not output anything to avoid
 		// ugly white overlay.
 		if ( trim( $galleryText ) === '' ) {

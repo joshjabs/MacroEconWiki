@@ -40,6 +40,8 @@ class ChangesListStringOptionsFilterGroupTest extends MediaWikiTestCase {
 	 * @dataProvider provideModifyQuery
 	 */
 	public function testModifyQuery( $filterDefinitions, $expectedValues, $input ) {
+		$self = $this;
+
 		$queryCallable = function (
 			$className,
 			$ctx,
@@ -50,8 +52,8 @@ class ChangesListStringOptionsFilterGroupTest extends MediaWikiTestCase {
 			&$query_options,
 			&$join_conds,
 			$actualSelectedValues
-		) use ( $expectedValues ) {
-			$this->assertSame(
+		) use ( $self, $expectedValues ) {
+			$self->assertSame(
 				$expectedValues,
 				$actualSelectedValues
 			);

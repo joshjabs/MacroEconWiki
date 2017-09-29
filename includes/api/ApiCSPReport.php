@@ -63,9 +63,9 @@ class ApiCSPReport extends ApiBase {
 
 	/**
 	 * Log CSP report, with a different severity depending on $flags
-	 * @param array $flags Flags for this report
-	 * @param string $logLine text of log entry
-	 * @param array $context logging context
+	 * @param $flags Array Flags for this report
+	 * @param $logLine String text of log entry
+	 * @param $context Array logging context
 	 */
 	private function logReport( $flags, $logLine, $context ) {
 		if ( in_array( 'false-positive', $flags ) ) {
@@ -80,8 +80,8 @@ class ApiCSPReport extends ApiBase {
 	/**
 	 * Get extra notes about the report.
 	 *
-	 * @param array $report The CSP report
-	 * @return array
+	 * @param $report Array The CSP report
+	 * @return Array
 	 */
 	private function getFlags( $report ) {
 		$reportOnly = $this->getParameter( 'reportonly' );
@@ -115,7 +115,7 @@ class ApiCSPReport extends ApiBase {
 		$req = $this->getRequest();
 		$contentType = $req->getHeader( 'content-type' );
 		if ( $contentType !== 'application/json'
-			&& $contentType !== 'application/csp-report'
+			&& $contentType !=='application/csp-report'
 		) {
 			$this->error( 'wrongformat', __METHOD__ );
 		}
@@ -155,9 +155,9 @@ class ApiCSPReport extends ApiBase {
 	/**
 	 * Get text of log line.
 	 *
-	 * @param array $flags of additional markers for this report
-	 * @param array $report the csp report
-	 * @return string Text to put in log
+	 * @param $flags Array of additional markers for this report
+	 * @param $report Array the csp report
+	 * @return String Text to put in log
 	 */
 	private function generateLogLine( $flags, $report ) {
 		$flagText = '';
@@ -177,8 +177,8 @@ class ApiCSPReport extends ApiBase {
 	/**
 	 * Stop processing the request, and output/log an error
 	 *
-	 * @param string $code error code
-	 * @param string $method method that made error
+	 * @param $code String error code
+	 * @param $method String method that made error
 	 * @throws ApiUsageException Always
 	 */
 	private function error( $code, $method ) {
@@ -186,9 +186,9 @@ class ApiCSPReport extends ApiBase {
 			'method' => $method,
 			'user-agent' => $this->getRequest()->getHeader( 'user-agent' )
 		] );
-		// Return 400 on error for user agents to display, e.g. to the console.
+		// 500 so it shows up in browser's developer console.
 		$this->dieWithError(
-			[ 'apierror-csp-report', wfEscapeWikiText( $code ) ], 'cspreport-' . $code, [], 400
+			[ 'apierror-csp-report', wfEscapeWikiText( $code ) ], 'cspreport-' . $code, [], 500
 		);
 	}
 
@@ -216,7 +216,6 @@ class ApiCSPReport extends ApiBase {
 
 	/**
 	 * Mark as internal. This isn't meant to be used by normal api users
-	 * @return bool
 	 */
 	public function isInternal() {
 		return true;
@@ -224,7 +223,6 @@ class ApiCSPReport extends ApiBase {
 
 	/**
 	 * Even if you don't have read rights, we still want your report.
-	 * @return bool
 	 */
 	public function isReadMode() {
 		return false;
@@ -234,7 +232,6 @@ class ApiCSPReport extends ApiBase {
 	 * Doesn't touch db, so max lag should be rather irrelavent.
 	 *
 	 * Also, this makes sure that reports aren't lost during lag events.
-	 * @return bool
 	 */
 	public function shouldCheckMaxLag() {
 		return false;

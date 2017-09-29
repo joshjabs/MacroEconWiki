@@ -383,6 +383,8 @@ class ClassicInterwikiLookup implements InterwikiLookup {
 				. $e->getMessage() );
 		}
 
+		ksort( $data );
+
 		return array_values( $data );
 	}
 

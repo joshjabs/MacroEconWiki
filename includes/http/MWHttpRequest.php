@@ -33,12 +33,8 @@ use Psr\Log\NullLogger;
 class MWHttpRequest implements LoggerAwareInterface {
 	const SUPPORTS_FILE_POSTS = false;
 
-	/**
-	 * @var int|string
-	 */
-	protected $timeout = 'default';
-
 	protected $content;
+	protected $timeout = 'default';
 	protected $headersOnly = null;
 	protected $postData = null;
 	protected $proxy = null;

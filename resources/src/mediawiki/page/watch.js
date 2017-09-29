@@ -5,9 +5,8 @@
  * @class mw.page.watch.ajax
  */
 ( function ( mw, $ ) {
-	var watch,
-		// The name of the page to watch or unwatch
-		title = mw.config.get( 'wgRelevantPageName' );
+	// The name of the page to watch or unwatch
+	var title = mw.config.get( 'wgRelevantPageName' );
 
 	/**
 	 * Update the link text, link href attribute and (if applicable)
@@ -97,26 +96,14 @@
 	}
 
 	// Expose public methods
-	watch = {
+	mw.page.watch = {
 		updateWatchLink: updateWatchLink
 	};
-	module.exports = watch;
-
-	// Deprecated since 1.30
-	mw.log.deprecate( mw, 'page',
-		{ watch: watch },
-		'Use require( \'mediawiki.page.watch.ajax\' ) instead.',
-		'mw.page'
-	);
 
 	$( function () {
-		var $links = $( '.mw-watchlink a[data-mw="interface"], a.mw-watchlink[data-mw="interface"]' );
-		if ( !$links.length ) {
-			// Fallback to the class-based exclusion method for backwards-compatibility
-			$links = $( '.mw-watchlink a, a.mw-watchlink' );
-			// Restrict to core interfaces, ignore user-generated content
-			$links = $links.filter( ':not( #bodyContent *, #content * )' );
-		}
+		var $links = $( '.mw-watchlink a, a.mw-watchlink' );
+		// Restrict to core interfaces, ignore user-generated content
+		$links = $links.filter( ':not( #bodyContent *, #content * )' );
 
 		$links.click( function ( e ) {
 			var mwTitle, action, api, $link;

@@ -41,28 +41,11 @@ class ApiLogin extends ApiBase {
 		parent::__construct( $main, $action, 'lg' );
 	}
 
-	protected function getExtendedDescription() {
+	protected function getDescriptionMessage() {
 		if ( $this->getConfig()->get( 'EnableBotPasswords' ) ) {
-			return 'apihelp-login-extended-description';
+			return 'apihelp-login-description';
 		} else {
-			return 'apihelp-login-extended-description-nobotpasswords';
-		}
-	}
-
-	/**
-	 * Format a message for the response
-	 * @param Message|string|array $message
-	 * @return string|array
-	 */
-	private function formatMessage( $message ) {
-		$message = Message::newFromSpecifier( $message );
-		$errorFormatter = $this->getErrorFormatter();
-		if ( $errorFormatter instanceof ApiErrorFormatter_BackCompat ) {
-			return ApiErrorFormatter::stripMarkup(
-				$message->useDatabase( false )->inLanguage( 'en' )->text()
-			);
-		} else {
-			return $errorFormatter->formatMessage( $message );
+			return 'apihelp-login-description-nobotpasswords';
 		}
 	}
 
@@ -81,7 +64,7 @@ class ApiLogin extends ApiBase {
 		if ( $this->lacksSameOriginSecurity() ) {
 			$this->getResult()->addValue( null, 'login', [
 				'result' => 'Aborted',
-				'reason' => $this->formatMessage( 'api-login-fail-sameorigin' ),
+				'reason' => 'Cannot log in when the same-origin policy is not applied',
 			] );
 
 			return;
@@ -101,10 +84,8 @@ class ApiLogin extends ApiBase {
 		if ( !$session->canSetUser() ) {
 			$this->getResult()->addValue( null, 'login', [
 				'result' => 'Aborted',
-				'reason' => $this->formatMessage( [
-					'api-login-fail-badsessionprovider',
-					$session->getProvider()->describe( $this->getErrorFormatter()->getLanguage() ),
-				] )
+				'reason' => 'Cannot log in when using ' .
+					$session->getProvider()->describe( Language::factory( 'en' ) ),
 			] );
 
 			return;
@@ -209,15 +190,25 @@ class ApiLogin extends ApiBase {
 				break;
 
 			case 'Failed':
-				$result['reason'] = $this->formatMessage( $message );
+				$errorFormatter = $this->getErrorFormatter();
+				if ( $errorFormatter instanceof ApiErrorFormatter_BackCompat ) {
+					$result['reason'] = ApiErrorFormatter::stripMarkup(
+						$message->useDatabase( false )->inLanguage( 'en' )->text()
+					);
+				} else {
+					$result['reason'] = $errorFormatter->formatMessage( $message );
+				}
 				break;
 
 			case 'Aborted':
-				$result['reason'] = $this->formatMessage(
-					$this->getConfig()->get( 'EnableBotPasswords' )
-						? 'api-login-fail-aborted'
-						: 'api-login-fail-aborted-nobotpw'
-				);
+				$result['reason'] = 'Authentication requires user interaction, ' .
+					'which is not supported by action=login.';
+				if ( $this->getConfig()->get( 'EnableBotPasswords' ) ) {
+					$result['reason'] .= ' To be able to login with action=login, see [[Special:BotPasswords]].';
+					$result['reason'] .= ' To continue using main-account login, see action=clientlogin.';
+				} else {
+					$result['reason'] .= ' To log in, see action=clientlogin.';
+				}
 				break;
 
 			default:

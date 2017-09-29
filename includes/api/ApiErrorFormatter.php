@@ -160,9 +160,6 @@ class ApiErrorFormatter {
 		if ( $exception instanceof ILocalizedException ) {
 			$msg = $exception->getMessageObject();
 			$params = [];
-		} elseif ( $exception instanceof MessageSpecifier ) {
-			$msg = Message::newFromSpecifier( $exception );
-			$params = [];
 		} else {
 			// Extract code and data from the exception, if applicable
 			if ( $exception instanceof UsageException ) {
@@ -257,7 +254,7 @@ class ApiErrorFormatter {
 		$ret = preg_replace( '!</?(var|kbd|samp|code)>!', '"', $text );
 
 		// Strip tags and decode.
-		$ret = Sanitizer::stripAllTags( $ret );
+		$ret = html_entity_decode( strip_tags( $ret ), ENT_QUOTES | ENT_HTML5 );
 
 		return $ret;
 	}

@@ -43,47 +43,19 @@ class ResourceLoaderClientHtmlTest extends PHPUnit_Framework_TestCase {
 			'test.top' => [ 'position' => 'top' ],
 			'test.private.top' => [ 'group' => 'private', 'position' => 'top' ],
 			'test.private.bottom' => [ 'group' => 'private', 'position' => 'bottom' ],
-			'test.shouldembed.empty' => [ 'shouldEmbed' => true, 'isKnownEmpty' => true ],
-			'test.shouldembed' => [ 'shouldEmbed' => true ],
 
 			'test.styles.pure' => [ 'type' => ResourceLoaderModule::LOAD_STYLES ],
 			'test.styles.mixed' => [],
-			'test.styles.noscript' => [
-				'type' => ResourceLoaderModule::LOAD_STYLES,
-				'group' => 'noscript',
-			],
-			'test.styles.user' => [
-				'type' => ResourceLoaderModule::LOAD_STYLES,
-				'group' => 'user',
-			],
-			'test.styles.user.empty' => [
-				'type' => ResourceLoaderModule::LOAD_STYLES,
-				'group' => 'user',
-				'isKnownEmpty' => true,
-			],
-			'test.styles.private' => [
-				'type' => ResourceLoaderModule::LOAD_STYLES,
-				'group' => 'private',
-				'styles' => '.private{}',
-			],
-			'test.styles.shouldembed' => [
-				'type' => ResourceLoaderModule::LOAD_STYLES,
-				'shouldEmbed' => true,
-				'styles' => '.shouldembed{}',
-			],
+			'test.styles.noscript' => [ 'group' => 'noscript', 'type' => ResourceLoaderModule::LOAD_STYLES ],
+			'test.styles.mixed.user' => [ 'group' => 'user' ],
+			'test.styles.mixed.user.empty' => [ 'group' => 'user', 'isKnownEmpty' => true ],
+			'test.styles.private' => [ 'group' => 'private', 'styles' => '.private{}' ],
 
 			'test.scripts' => [],
 			'test.scripts.top' => [ 'position' => 'top' ],
-			'test.scripts.user' => [ 'group' => 'user' ],
-			'test.scripts.user.empty' => [ 'group' => 'user', 'isKnownEmpty' => true ],
+			'test.scripts.mixed.user' => [ 'group' => 'user' ],
+			'test.scripts.mixed.user.empty' => [ 'group' => 'user', 'isKnownEmpty' => true ],
 			'test.scripts.raw' => [ 'isRaw' => true ],
-			'test.scripts.shouldembed' => [ 'shouldEmbed' => true ],
-
-			'test.ordering.a' => [ 'shouldEmbed' => false ],
-			'test.ordering.b' => [ 'shouldEmbed' => false ],
-			'test.ordering.c' => [ 'shouldEmbed' => true, 'styles' => '.orderingC{}' ],
-			'test.ordering.d' => [ 'shouldEmbed' => true, 'styles' => '.orderingD{}' ],
-			'test.ordering.e' => [ 'shouldEmbed' => false ],
 		];
 		return array_map( function ( $options ) {
 			return self::makeModule( $options );
@@ -116,23 +88,19 @@ class ResourceLoaderClientHtmlTest extends PHPUnit_Framework_TestCase {
 			'test.private.bottom',
 			'test.private.top',
 			'test.top',
-			'test.shouldembed.empty',
-			'test.shouldembed',
 			'test.unregistered',
 		] );
 		$client->setModuleStyles( [
 			'test.styles.mixed',
-			'test.styles.user.empty',
+			'test.styles.mixed.user.empty',
 			'test.styles.private',
 			'test.styles.pure',
-			'test.styles.shouldembed',
 			'test.unregistered.styles',
 		] );
 		$client->setModuleScripts( [
 			'test.scripts',
-			'test.scripts.user.empty',
+			'test.scripts.mixed.user.empty',
 			'test.scripts.top',
-			'test.scripts.shouldembed',
 			'test.unregistered.scripts',
 		] );
 
@@ -140,35 +108,30 @@ class ResourceLoaderClientHtmlTest extends PHPUnit_Framework_TestCase {
 			'states' => [
 				'test.private.top' => 'loading',
 				'test.private.bottom' => 'loading',
-				'test.shouldembed.empty' => 'ready',
-				'test.shouldembed' => 'loading',
 				'test.styles.pure' => 'ready',
-				'test.styles.user.empty' => 'ready',
+				'test.styles.mixed.user.empty' => 'ready',
 				'test.styles.private' => 'ready',
-				'test.styles.shouldembed' => 'ready',
 				'test.scripts' => 'loading',
 				'test.scripts.top' => 'loading',
-				'test.scripts.user.empty' => 'ready',
-				'test.scripts.shouldembed' => 'loading',
+				'test.scripts.mixed.user.empty' => 'ready',
 			],
 			'general' => [
 				'test',
 				'test.top',
 			],
 			'styles' => [
+				'test.styles.mixed',
 				'test.styles.pure',
 			],
 			'scripts' => [
 				'test.scripts',
 				'test.scripts.top',
-				'test.scripts.shouldembed',
 			],
 			'embed' => [
-				'styles' => [ 'test.styles.private', 'test.styles.shouldembed' ],
+				'styles' => [ 'test.styles.private' ],
 				'general' => [
 					'test.private.bottom',
 					'test.private.top',
-					'test.shouldembed',
 				],
 			],
 		];
@@ -277,9 +240,9 @@ class ResourceLoaderClientHtmlTest extends PHPUnit_Framework_TestCase {
 			],
 			[
 				'context' => [],
-				'modules' => [ 'test.scripts.user' ],
+				'modules' => [ 'test.scripts.mixed.user' ],
 				'only' => ResourceLoaderModule::TYPE_SCRIPTS,
-				'output' => '<script>(window.RLQ=window.RLQ||[]).push(function(){mw.loader.load("/w/load.php?debug=false\u0026lang=nl\u0026modules=test.scripts.user\u0026only=scripts\u0026skin=fallback\u0026user=Example\u0026version=0a56zyi");});</script>',
+				'output' => '<script>(window.RLQ=window.RLQ||[]).push(function(){mw.loader.load("/w/load.php?debug=false\u0026lang=nl\u0026modules=test.scripts.mixed.user\u0026only=scripts\u0026skin=fallback\u0026user=Example\u0026version=0a56zyi");});</script>',
 			],
 			[
 				'context' => [ 'debug' => true ],
@@ -299,47 +262,6 @@ class ResourceLoaderClientHtmlTest extends PHPUnit_Framework_TestCase {
 				'modules' => [ 'test.styles.noscript' ],
 				'only' => ResourceLoaderModule::TYPE_STYLES,
 				'output' => '<noscript><link rel="stylesheet" href="/w/load.php?debug=false&amp;lang=nl&amp;modules=test.styles.noscript&amp;only=styles&amp;skin=fallback"/></noscript>',
-			],
-			[
-				'context' => [],
-				'modules' => [ 'test.shouldembed' ],
-				'only' => ResourceLoaderModule::TYPE_COMBINED,
-				'output' => '<script>(window.RLQ=window.RLQ||[]).push(function(){mw.loader.implement("test.shouldembed@09p30q0",function($,jQuery,require,module){},{"css":[]});});</script>',
-			],
-			[
-				'context' => [],
-				'modules' => [ 'test.styles.shouldembed' ],
-				'only' => ResourceLoaderModule::TYPE_STYLES,
-				'output' => '<style>.shouldembed{}</style>',
-			],
-			[
-				'context' => [],
-				'modules' => [ 'test.scripts.shouldembed' ],
-				'only' => ResourceLoaderModule::TYPE_SCRIPTS,
-				'output' => '<script>(window.RLQ=window.RLQ||[]).push(function(){mw.loader.state({"test.scripts.shouldembed":"ready"});});</script>',
-			],
-			[
-				'context' => [],
-				'modules' => [ 'test', 'test.shouldembed' ],
-				'only' => ResourceLoaderModule::TYPE_COMBINED,
-				'output' => '<script>(window.RLQ=window.RLQ||[]).push(function(){mw.loader.load("/w/load.php?debug=false\u0026lang=nl\u0026modules=test\u0026skin=fallback");mw.loader.implement("test.shouldembed@09p30q0",function($,jQuery,require,module){},{"css":[]});});</script>',
-			],
-			[
-				'context' => [],
-				'modules' => [ 'test.styles.pure', 'test.styles.shouldembed' ],
-				'only' => ResourceLoaderModule::TYPE_STYLES,
-				'output' =>
-					'<link rel="stylesheet" href="/w/load.php?debug=false&amp;lang=nl&amp;modules=test.styles.pure&amp;only=styles&amp;skin=fallback"/>' . "\n"
-					. '<style>.shouldembed{}</style>'
-			],
-			[
-				'context' => [],
-				'modules' => [ 'test.ordering.a', 'test.ordering.e', 'test.ordering.b', 'test.ordering.d', 'test.ordering.c' ],
-				'only' => ResourceLoaderModule::TYPE_STYLES,
-				'output' =>
-					'<link rel="stylesheet" href="/w/load.php?debug=false&amp;lang=nl&amp;modules=test.ordering.a%2Cb&amp;only=styles&amp;skin=fallback"/>' . "\n"
-					. '<style>.orderingC{}.orderingD{}</style>' . "\n"
-					. '<link rel="stylesheet" href="/w/load.php?debug=false&amp;lang=nl&amp;modules=test.ordering.e&amp;only=styles&amp;skin=fallback"/>'
 			],
 			// @codingStandardsIgnoreEnd
 		];

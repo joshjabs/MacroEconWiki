@@ -74,25 +74,25 @@ abstract class ChangesListFilter {
 	protected $description;
 
 	/**
-	 * Array of associative arrays with conflict information.  See
-	 * setUnidirectionalConflict
+	 * List of conflicting groups
 	 *
-	 * @var array $conflictingGroups
+	 * @var array $conflictingGroups Array of associative arrays with conflict
+	 *   information.  See setUnidirectionalConflict
 	 */
 	protected $conflictingGroups = [];
 
 	/**
-	 * Array of associative arrays with conflict information.  See
-	 * setUnidirectionalConflict
+	 * List of conflicting filters
 	 *
-	 * @var array $conflictingFilters
+	 * @var array $conflictingFilters Array of associative arrays with conflict
+	 *   information.  See setUnidirectionalConflict
 	 */
 	protected $conflictingFilters = [];
 
 	/**
-	 * Array of associative arrays with subset information
+	 * List of filters that are a subset of the current filter
 	 *
-	 * @var array $subsetFilters
+	 * @var array $subsetFilters Array of associative arrays with subset information
 	 */
 	protected $subsetFilters = [];
 
@@ -117,22 +117,23 @@ abstract class ChangesListFilter {
 	 * UI it's for.
 	 *
 	 * @param array $filterDefinition ChangesListFilter definition
-	 * * $filterDefinition['name'] string Name of filter; use lowercase with no
-	 *     punctuation
-	 * * $filterDefinition['cssClassSuffix'] string CSS class suffix, used to mark
-	 *     that a particular row belongs to this filter (when a row is included by the
-	 *     filter) (optional)
-	 * * $filterDefinition['isRowApplicableCallable'] Callable taking two parameters, the
-	 *     IContextSource, and the RecentChange object for the row, and returning true if
-	 *     the row is attributed to this filter.  The above CSS class will then be
-	 *     automatically added (optional, required if cssClassSuffix is used).
-	 * * $filterDefinition['group'] ChangesListFilterGroup Group.  Filter group this
-	 *     belongs to.
-	 * * $filterDefinition['label'] string i18n key of label for structured UI.
-	 * * $filterDefinition['description'] string i18n key of description for structured
-	 *     UI.
-	 * * $filterDefinition['priority'] int Priority integer.  Higher value means higher
-	 *     up in the group's filter list.
+	 *
+	 * $filterDefinition['name'] string Name of filter; use lowercase with no
+	 *  punctuation
+	 * $filterDefinition['cssClassSuffix'] string CSS class suffix, used to mark
+	 *  that a particular row belongs to this filter (when a row is included by the
+	 *  filter) (optional)
+	 * $filterDefinition['isRowApplicableCallable'] Callable taking two parameters, the
+	 *  IContextSource, and the RecentChange object for the row, and returning true if
+	 *  the row is attributed to this filter.  The above CSS class will then be
+	 *  automatically added (optional, required if cssClassSuffix is used).
+	 * $filterDefinition['group'] ChangesListFilterGroup Group.  Filter group this
+	 *  belongs to.
+	 * $filterDefinition['label'] string i18n key of label for structured UI.
+	 * $filterDefinition['description'] string i18n key of description for structured
+	 *  UI.
+	 * $filterDefinition['priority'] int Priority integer.  Higher value means higher
+	 *  up in the group's filter list.
 	 */
 	public function __construct( array $filterDefinition ) {
 		if ( isset( $filterDefinition['group'] ) ) {
@@ -186,8 +187,12 @@ abstract class ChangesListFilter {
 	 * @param string $backwardKey i18n key for conflict message in reverse
 	 *  direction (when in UI context of $other object)
 	 */
-	public function conflictsWith( $other, $globalKey, $forwardKey, $backwardKey ) {
-		if ( $globalKey === null || $forwardKey === null || $backwardKey === null ) {
+	public function conflictsWith( $other, $globalKey, $forwardKey,
+		$backwardKey ) {
+
+		if ( $globalKey === null || $forwardKey === null ||
+			$backwardKey === null ) {
+
 			throw new MWException( 'All messages must be specified' );
 		}
 
@@ -216,7 +221,9 @@ abstract class ChangesListFilter {
 	 * @param string $contextDescription i18n key for conflict message in this
 	 *  direction (when in UI context of $this object)
 	 */
-	public function setUnidirectionalConflict( $other, $globalDescription, $contextDescription ) {
+	public function setUnidirectionalConflict( $other, $globalDescription,
+		$contextDescription ) {
+
 		if ( $other instanceof ChangesListFilterGroup ) {
 			$this->conflictingGroups[] = [
 				'group' => $other->getName(),
@@ -244,7 +251,7 @@ abstract class ChangesListFilter {
 	 * This means that anything in the results for the other filter is also in the
 	 * results for this one.
 	 *
-	 * @param ChangesListFilter $other The filter the current instance is a superset of
+	 * @param ChangesListFilter The filter the current instance is a superset of
 	 */
 	public function setAsSupersetOf( ChangesListFilter $other ) {
 		if ( $other->getGroup() !== $this->getGroup() ) {
@@ -309,7 +316,6 @@ abstract class ChangesListFilter {
 	 * structured UI.
 	 *
 	 * This can either be the exact filter, or a new filter that replaces it.
-	 * @return bool
 	 */
 	public function isFeatureAvailableOnStructuredUi() {
 		return $this->displaysOnStructuredUi();
@@ -340,7 +346,7 @@ abstract class ChangesListFilter {
 	 *
 	 * @param IContextSource $ctx Context source
 	 * @param RecentChange $rc Recent changes object
-	 * @param array &$classes Non-associative array of CSS class names; appended to if needed
+	 * @param Non-associative array of CSS class names; appended to if needed
 	 */
 	public function applyCssClassIfNeeded( IContextSource $ctx, RecentChange $rc, array &$classes ) {
 		if ( $this->isRowApplicableCallable === null ) {

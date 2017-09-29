@@ -35,6 +35,7 @@ class SearchDatabase extends SearchEngine {
 	protected $db;
 
 	/**
+	 * Constructor
 	 * @param IDatabase $db The database to search from
 	 */
 	public function __construct( IDatabase $db = null ) {

@@ -1,12 +1,12 @@
 /*!
- * OOjs UI v0.23.2
+ * OOjs UI v0.21.1
  * https://www.mediawiki.org/wiki/OOjs_UI
  *
  * Copyright 2011–2017 OOjs UI Team and other contributors.
  * Released under the MIT license
  * http://oojs.mit-license.org
  *
- * Date: 2017-09-26T20:18:42Z
+ * Date: 2017-04-18T23:32:49Z
  */
 ( function ( OO ) {
 
@@ -41,5 +41,3 @@ OO.ui.ApexTheme.prototype.getDialogTransitionDuration = function () {
 OO.ui.theme = new OO.ui.ApexTheme();
 
 }( OO ) );
-
-//# sourceMappingURL=oojs-ui-apex.js.map

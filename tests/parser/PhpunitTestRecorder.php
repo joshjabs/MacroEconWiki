@@ -9,8 +9,6 @@ class PhpunitTestRecorder extends TestRecorder {
 
 	/**
 	 * Mark a test skipped
-	 * @param string $test
-	 * @param string $reason
 	 */
 	public function skipped( $test, $reason ) {
 		$this->testCase->markTestSkipped( "SKIPPED: $reason" );

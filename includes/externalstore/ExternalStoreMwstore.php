@@ -35,8 +35,6 @@ class ExternalStoreMwstore extends ExternalStoreMedium {
 	 * The URL returned is of the form of the form mwstore://backend/container/wiki/id
 	 *
 	 * @see ExternalStoreMedium::fetchFromURL()
-	 * @param string $url
-	 * @return bool
 	 */
 	public function fetchFromURL( $url ) {
 		$be = FileBackendGroup::singleton()->backendFromPath( $url );
@@ -75,10 +73,6 @@ class ExternalStoreMwstore extends ExternalStoreMedium {
 
 	/**
 	 * @see ExternalStoreMedium::store()
-	 * @param string $backend
-	 * @param string $data
-	 * @return string|bool
-	 * @throws MWException
 	 */
 	public function store( $backend, $data ) {
 		$be = FileBackendGroup::singleton()->get( $backend );

@@ -242,14 +242,14 @@ abstract class FileCacheBase {
 				: IP::sanitizeRange( "$ip/16" );
 
 			# Bail out if a request already came from this range...
-			$key = $cache->makeKey( static::class, 'attempt', $this->mType, $this->mKey, $ip );
+			$key = wfMemcKey( static::class, 'attempt', $this->mType, $this->mKey, $ip );
 			if ( $cache->get( $key ) ) {
 				return; // possibly the same user
 			}
 			$cache->set( $key, 1, self::MISS_TTL_SEC );
 
 			# Increment the number of cache misses...
-			$key = $this->cacheMissKey( $cache );
+			$key = $this->cacheMissKey();
 			if ( $cache->get( $key ) === false ) {
 				$cache->set( $key, 1, self::MISS_TTL_SEC );
 			} else {
@@ -265,14 +265,13 @@ abstract class FileCacheBase {
 	public function getMissesRecent() {
 		$cache = ObjectCache::getLocalClusterInstance();
 
-		return self::MISS_FACTOR * $cache->get( $this->cacheMissKey( $cache ) );
+		return self::MISS_FACTOR * $cache->get( $this->cacheMissKey() );
 	}
 
 	/**
-	 * @param BagOStuff $cache Instance that the key will be used with
 	 * @return string
 	 */
-	protected function cacheMissKey( BagOStuff $cache ) {
-		return $cache->makeKey( static::class, 'misses', $this->mType, $this->mKey );
+	protected function cacheMissKey() {
+		return wfMemcKey( static::class, 'misses', $this->mType, $this->mKey );
 	}
 }

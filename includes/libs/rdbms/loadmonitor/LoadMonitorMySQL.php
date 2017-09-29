@@ -22,7 +22,6 @@
 namespace Wikimedia\Rdbms;
 
 use BagOStuff;
-use WANObjectCache;
 
 /**
  * Basic MySQL load monitor with no external dependencies
@@ -35,9 +34,9 @@ class LoadMonitorMySQL extends LoadMonitor {
 	private $warmCacheRatio;
 
 	public function __construct(
-		ILoadBalancer $lb, BagOStuff $srvCache, WANObjectCache $wCache, array $options = []
+		ILoadBalancer $lb, BagOStuff $srvCache, BagOStuff $cache, array $options = []
 	) {
-		parent::__construct( $lb, $srvCache, $wCache, $options );
+		parent::__construct( $lb, $srvCache, $cache, $options );
 
 		$this->warmCacheRatio = isset( $options['warmCacheRatio'] )
 			? $options['warmCacheRatio']

@@ -170,7 +170,7 @@ abstract class ContextSource implements IContextSource {
 	 * @deprecated since 1.27 use a StatsdDataFactory from MediaWikiServices (preferably injected)
 	 *
 	 * @since 1.25
-	 * @return IBufferingStatsdDataFactory
+	 * @return StatsdDataFactory
 	 */
 	public function getStats() {
 		return MediaWikiServices::getInstance()->getStatsdDataFactory();
@@ -181,12 +181,10 @@ abstract class ContextSource implements IContextSource {
 	 * Parameters are the same as wfMessage()
 	 *
 	 * @since 1.18
-	 * @param string|string[]|MessageSpecifier $key Message key, or array of keys,
-	 *   or a MessageSpecifier.
-	 * @param mixed $args,...
+	 * @param mixed ...
 	 * @return Message
 	 */
-	public function msg( $key /* $args */ ) {
+	public function msg( /* $args */ ) {
 		$args = func_get_args();
 
 		return call_user_func_array( [ $this->getContext(), 'msg' ], $args );

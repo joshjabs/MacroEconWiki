@@ -53,24 +53,37 @@ class ApiQueryTags extends ApiQueryBase {
 		$softwareDefinedTags = array_fill_keys( ChangeTags::listSoftwareDefinedTags(), 0 );
 		$explicitlyDefinedTags = array_fill_keys( ChangeTags::listExplicitlyDefinedTags(), 0 );
 		$softwareActivatedTags = array_fill_keys( ChangeTags::listSoftwareActivatedTags(), 0 );
-		$tagStats = ChangeTags::tagUsageStatistics();
 
-		$tagHitcounts = array_merge( $softwareDefinedTags, $explicitlyDefinedTags, $tagStats );
-		$tags = array_keys( $tagHitcounts );
+		$definedTags = array_merge( $softwareDefinedTags, $explicitlyDefinedTags );
 
 		# Fetch defined tags that aren't past the continuation
 		if ( $params['continue'] !== null ) {
 			$cont = $params['continue'];
-			$tags = array_filter( $tags, function ( $v ) use ( $cont ) {
+			$tags = array_filter( array_keys( $definedTags ), function ( $v ) use ( $cont ) {
 				return $v >= $cont;
 			} );
+			$tags = array_fill_keys( $tags, 0 );
+		} else {
+			$tags = $definedTags;
+		}
+
+		# Merge in all used tags
+		$this->addTables( 'change_tag' );
+		$this->addFields( 'ct_tag' );
+		$this->addFields( [ 'hitcount' => $fld_hitcount ? 'COUNT(*)' : '0' ] );
+		$this->addOption( 'LIMIT', $limit + 1 );
+		$this->addOption( 'GROUP BY', 'ct_tag' );
+		$this->addWhereRange( 'ct_tag', 'newer', $params['continue'], null );
+		$res = $this->select( __METHOD__ );
+		foreach ( $res as $row ) {
+			$tags[$row->ct_tag] = (int)$row->hitcount;
 		}
 
 		# Now make sure the array is sorted for proper continuation
-		sort( $tags );
+		ksort( $tags );
 
 		$count = 0;
-		foreach ( $tags as $tagName ) {
+		foreach ( $tags as $tagName => $hitcount ) {
 			if ( ++$count > $limit ) {
 				$this->setContinueEnumParameter( 'continue', $tagName );
 				break;
@@ -89,7 +102,7 @@ class ApiQueryTags extends ApiQueryBase {
 			}
 
 			if ( $fld_hitcount ) {
-				$tag['hitcount'] = intval( $tagHitcounts[$tagName] );
+				$tag['hitcount'] = $hitcount;
 			}
 
 			$isSoftware = isset( $softwareDefinedTags[$tagName] );

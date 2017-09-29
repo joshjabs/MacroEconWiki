@@ -269,13 +269,11 @@ class SkinTemplate extends Skin {
 		# An ID that includes the actual body text; without categories, contentSub, ...
 		$realBodyAttribs = [ 'id' => 'mw-content-text' ];
 
-		# Add a mw-content-ltr/rtl class to be able to style based on text
-		# direction when the content is different from the UI language (only
-		# when viewing)
-		# Most information on special pages and file pages is in user language,
-		# rather than content language, so those will not get this
-		if ( Action::getActionName( $this ) === 'view' &&
-			( !$title->inNamespaces( NS_SPECIAL, NS_FILE ) || $title->isRedirect() ) ) {
+		# Add a mw-content-ltr/rtl class to be able to style based on text direction
+		# when the content is different from the UI language, i.e.:
+		# not for special pages or file pages AND only when viewing
+		if ( !in_array( $title->getNamespace(), [ NS_SPECIAL, NS_FILE ] ) &&
+			Action::getActionName( $this ) === 'view' ) {
 			$pageLang = $title->getPageViewLanguage();
 			$realBodyAttribs['lang'] = $pageLang->getHtmlCode();
 			$realBodyAttribs['dir'] = $pageLang->getDir();
@@ -306,8 +304,8 @@ class SkinTemplate extends Skin {
 		$tpl->set( 'pagetitle', $out->getHTMLTitle() );
 		$tpl->set( 'displaytitle', $out->mPageLinkTitle );
 
-		$tpl->set( 'thispage', $this->thispage );
-		$tpl->set( 'titleprefixeddbkey', $this->thispage );
+		$tpl->setRef( 'thispage', $this->thispage );
+		$tpl->setRef( 'titleprefixeddbkey', $this->thispage );
 		$tpl->set( 'titletext', $title->getText() );
 		$tpl->set( 'articleid', $title->getArticleID() );
 
@@ -336,32 +334,32 @@ class SkinTemplate extends Skin {
 					'href' => $link
 				];
 			}
-			$tpl->set( 'feeds', $feeds );
+			$tpl->setRef( 'feeds', $feeds );
 		} else {
 			$tpl->set( 'feeds', false );
 		}
 
-		$tpl->set( 'mimetype', $wgMimeType );
-		$tpl->set( 'jsmimetype', $wgJsMimeType );
+		$tpl->setRef( 'mimetype', $wgMimeType );
+		$tpl->setRef( 'jsmimetype', $wgJsMimeType );
 		$tpl->set( 'charset', 'UTF-8' );
-		$tpl->set( 'wgScript', $wgScript );
-		$tpl->set( 'skinname', $this->skinname );
+		$tpl->setRef( 'wgScript', $wgScript );
+		$tpl->setRef( 'skinname', $this->skinname );
 		$tpl->set( 'skinclass', static::class );
-		$tpl->set( 'skin', $this );
-		$tpl->set( 'stylename', $this->stylename );
+		$tpl->setRef( 'skin', $this );
+		$tpl->setRef( 'stylename', $this->stylename );
 		$tpl->set( 'printable', $out->isPrintable() );
 		$tpl->set( 'handheld', $request->getBool( 'handheld' ) );
-		$tpl->set( 'loggedin', $this->loggedin );
+		$tpl->setRef( 'loggedin', $this->loggedin );
 		$tpl->set( 'notspecialpage', !$title->isSpecialPage() );
 		$tpl->set( 'searchaction', $this->escapeSearchLink() );
 		$tpl->set( 'searchtitle', SpecialPage::getTitleFor( 'Search' )->getPrefixedDBkey() );
 		$tpl->set( 'search', trim( $request->getVal( 'search' ) ) );
-		$tpl->set( 'stylepath', $wgStylePath );
-		$tpl->set( 'articlepath', $wgArticlePath );
-		$tpl->set( 'scriptpath', $wgScriptPath );
-		$tpl->set( 'serverurl', $wgServer );
-		$tpl->set( 'logopath', $wgLogo );
-		$tpl->set( 'sitename', $wgSitename );
+		$tpl->setRef( 'stylepath', $wgStylePath );
+		$tpl->setRef( 'articlepath', $wgArticlePath );
+		$tpl->setRef( 'scriptpath', $wgScriptPath );
+		$tpl->setRef( 'serverurl', $wgServer );
+		$tpl->setRef( 'logopath', $wgLogo );
+		$tpl->setRef( 'sitename', $wgSitename );
 
 		$userLang = $this->getLanguage();
 		$userLangCode = $userLang->getHtmlCode();
@@ -374,8 +372,8 @@ class SkinTemplate extends Skin {
 		$tpl->set( 'capitalizeallnouns', $userLang->capitalizeAllNouns() ? ' capitalize-all-nouns' : '' );
 		$tpl->set( 'showjumplinks', true ); // showjumplinks preference has been removed
 		$tpl->set( 'username', $this->loggedin ? $this->username : null );
-		$tpl->set( 'userpage', $this->userpage );
-		$tpl->set( 'userpageurl', $this->userpageUrlDetails['href'] );
+		$tpl->setRef( 'userpage', $this->userpage );
+		$tpl->setRef( 'userpageurl', $this->userpageUrlDetails['href'] );
 		$tpl->set( 'userlang', $userLangCode );
 
 		// Users can have their language set differently than the
@@ -462,11 +460,11 @@ class SkinTemplate extends Skin {
 		$tpl->set( 'printfooter', $this->printSource() );
 		// Wrap the bodyText with #mw-content-text element
 		$out->mBodytext = $this->wrapHTML( $title, $out->mBodytext );
-		$tpl->set( 'bodytext', $out->mBodytext );
+		$tpl->setRef( 'bodytext', $out->mBodytext );
 
 		$language_urls = $this->getLanguages();
 		if ( count( $language_urls ) ) {
-			$tpl->set( 'language_urls', $language_urls );
+			$tpl->setRef( 'language_urls', $language_urls );
 		} else {
 			$tpl->set( 'language_urls', false );
 		}
@@ -475,8 +473,8 @@ class SkinTemplate extends Skin {
 		$tpl->set( 'personal_urls', $this->buildPersonalUrls() );
 		$content_navigation = $this->buildContentNavigationUrls();
 		$content_actions = $this->buildContentActionUrls( $content_navigation );
-		$tpl->set( 'content_navigation', $content_navigation );
-		$tpl->set( 'content_actions', $content_actions );
+		$tpl->setRef( 'content_navigation', $content_navigation );
+		$tpl->setRef( 'content_actions', $content_actions );
 
 		$tpl->set( 'sidebar', $this->buildSidebar() );
 		$tpl->set( 'nav_urls', $this->buildNavUrls() );
@@ -729,7 +727,7 @@ class SkinTemplate extends Skin {
 			}
 		}
 
-		Hooks::runWithoutAbort( 'PersonalUrls', [ &$personal_urls, &$title, $this ] );
+		Hooks::run( 'PersonalUrls', [ &$personal_urls, &$title, $this ] );
 		return $personal_urls;
 	}
 
@@ -811,9 +809,6 @@ class SkinTemplate extends Skin {
 
 	/**
 	 * @todo is this even used?
-	 * @param string $name
-	 * @param string $urlaction
-	 * @return array
 	 */
 	function makeArticleUrlDetails( $name, $urlaction = '' ) {
 		$title = Title::newFromText( $name );
@@ -1083,22 +1078,14 @@ class SkinTemplate extends Skin {
 						),
 						// uses 'watch' or 'unwatch' message
 						'text' => $this->msg( $mode )->text(),
-						'href' => $title->getLocalURL( [ 'action' => $mode ] ),
-						// Set a data-mw=interface attribute, which the mediawiki.page.ajax
-						// module will look for to make sure it's a trusted link
-						'data' => [
-							'mw' => 'interface',
-						],
+						'href' => $title->getLocalURL( [ 'action' => $mode ] )
 					];
 				}
 			}
 
 			// Avoid PHP 7.1 warning of passing $this by reference
 			$skinTemplate = $this;
-			Hooks::runWithoutAbort(
-				'SkinTemplateNavigation',
-				[ &$skinTemplate, &$content_navigation ]
-			);
+			Hooks::run( 'SkinTemplateNavigation', [ &$skinTemplate, &$content_navigation ] );
 
 			if ( $userCanRead && !$wgDisableLangConversion ) {
 				$pageLang = $title->getPageLanguage();
@@ -1142,15 +1129,14 @@ class SkinTemplate extends Skin {
 
 			// Avoid PHP 7.1 warning of passing $this by reference
 			$skinTemplate = $this;
-			Hooks::runWithoutAbort( 'SkinTemplateNavigation::SpecialPage',
+			Hooks::run( 'SkinTemplateNavigation::SpecialPage',
 				[ &$skinTemplate, &$content_navigation ] );
 		}
 
 		// Avoid PHP 7.1 warning of passing $this by reference
 		$skinTemplate = $this;
 		// Equiv to SkinTemplateContentActions
-		Hooks::runWithoutAbort( 'SkinTemplateNavigation::Universal',
-			[ &$skinTemplate, &$content_navigation ] );
+		Hooks::run( 'SkinTemplateNavigation::Universal', [ &$skinTemplate, &$content_navigation ] );
 
 		// Setup xml ids and tooltip info
 		foreach ( $content_navigation as $section => &$links ) {

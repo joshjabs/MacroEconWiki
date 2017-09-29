@@ -33,11 +33,11 @@
  */
 class ApiSetPageLanguage extends ApiBase {
 	// Check if change language feature is enabled
-	protected function getExtendedDescription() {
+	protected function getDescriptionMessage() {
 		if ( !$this->getConfig()->get( 'PageLanguageUseDB' ) ) {
-			return 'apihelp-setpagelanguage-extended-description-disabled';
+			return 'apihelp-setpagelanguage-description-disabled';
 		}
-		return parent::getExtendedDescription();
+		return parent::getDescriptionMessage();
 	}
 
 	/**

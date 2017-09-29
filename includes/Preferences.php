@@ -1,5 +1,7 @@
 <?php
 /**
+ * Form to edit user preferences.
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -107,7 +109,7 @@ class Preferences {
 	 * @throws MWException
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences Array to load values for
+	 * @param array $defaultPreferences Array to load values for
 	 * @return array|null
 	 */
 	static function loadPreferenceValues( $user, $context, &$defaultPreferences ) {
@@ -200,7 +202,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 * @return void
 	 */
 	static function profilePreferences( $user, IContextSource $context, &$defaultPreferences ) {
@@ -554,22 +556,6 @@ class Preferences {
 					'label-message' => 'tog-ccmeonemails',
 					'disabled' => $disableEmailPrefs,
 				];
-
-				if ( $config->get( 'EnableUserEmailBlacklist' )
-					 && !$disableEmailPrefs
-					 && !(bool)$user->getOption( 'disablemail' )
-				) {
-					$lookup = CentralIdLookup::factory();
-					$ids = $user->getOption( 'email-blacklist', [] );
-					$names = $ids ? $lookup->namesFromCentralIds( $ids, $user ) : [];
-
-					$defaultPreferences['email-blacklist'] = [
-						'type' => 'usersmultiselect',
-						'label-message' => 'email-blacklist-label',
-						'section' => 'personal/email',
-						'default' => implode( "\n", $names ),
-					];
-				}
 			}
 
 			if ( $config->get( 'EnotifWatchlist' ) ) {
@@ -613,7 +599,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 * @return void
 	 */
 	static function skinPreferences( $user, IContextSource $context, &$defaultPreferences ) {
@@ -625,6 +611,7 @@ class Preferences {
 			$defaultPreferences['skin'] = [
 				'type' => 'radio',
 				'options' => $skinOptions,
+				'label' => '&#160;',
 				'section' => 'rendering/skin',
 			];
 		}
@@ -663,7 +650,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 */
 	static function filesPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 		# # Files #####################################
@@ -684,7 +671,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 * @return void
 	 */
 	static function datetimePreferences( $user, IContextSource $context, &$defaultPreferences ) {
@@ -694,6 +681,7 @@ class Preferences {
 			$defaultPreferences['date'] = [
 				'type' => 'radio',
 				'options' => $dateOptions,
+				'label' => '&#160;',
 				'section' => 'rendering/dateformat',
 			];
 		}
@@ -761,7 +749,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 */
 	static function renderingPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 		# # Diffs ####################################
@@ -823,7 +811,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 */
 	static function editingPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 		# # Editing #####################################
@@ -844,10 +832,10 @@ class Preferences {
 				'section' => 'editing/editor',
 				'label-message' => 'editfont-style',
 				'options' => [
+					$context->msg( 'editfont-default' )->text() => 'default',
 					$context->msg( 'editfont-monospace' )->text() => 'monospace',
 					$context->msg( 'editfont-sansserif' )->text() => 'sans-serif',
 					$context->msg( 'editfont-serif' )->text() => 'serif',
-					$context->msg( 'editfont-default' )->text() => 'default',
 				]
 			];
 		}
@@ -896,7 +884,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 */
 	static function rcPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 		$config = $context->getConfig();
@@ -913,8 +901,6 @@ class Preferences {
 		];
 		$defaultPreferences['rclimit'] = [
 			'type' => 'int',
-			'min' => 0,
-			'max' => 1000,
 			'label-message' => 'recentchangescount',
 			'help-message' => 'prefs-help-recentchangescount',
 			'section' => 'rc/displayrc',
@@ -928,15 +914,6 @@ class Preferences {
 			'type' => 'toggle',
 			'label-message' => 'tog-hideminor',
 			'section' => 'rc/advancedrc',
-		];
-		$defaultPreferences['rcfilters-saved-queries'] = [
-			'type' => 'api',
-		];
-		$defaultPreferences['rcfilters-wl-saved-queries'] = [
-			'type' => 'api',
-		];
-		$defaultPreferences['rcfilters-rclimit'] = [
-			'type' => 'api',
 		];
 
 		if ( $config->get( 'RCWatchCategoryMembership' ) ) {
@@ -970,21 +947,12 @@ class Preferences {
 				'label-message' => 'tog-shownumberswatching',
 			];
 		}
-
-		if ( $config->get( 'StructuredChangeFiltersShowPreference' ) ) {
-			$defaultPreferences['rcenhancedfilters-disable'] = [
-				'type' => 'toggle',
-				'section' => 'rc/opt-out',
-				'label-message' => 'rcfilters-preference-label',
-				'help-message' => 'rcfilters-preference-help',
-			];
-		}
 	}
 
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 */
 	static function watchlistPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 		$config = $context->getConfig();
@@ -1068,11 +1036,6 @@ class Preferences {
 			'section' => 'watchlist/advancedwatchlist',
 			'label-message' => 'tog-watchlistreloadautomatically',
 		];
-		$defaultPreferences['watchlistunwatchlinks'] = [
-			'type' => 'toggle',
-			'section' => 'watchlist/advancedwatchlist',
-			'label-message' => 'tog-watchlistunwatchlinks',
-		];
 
 		if ( $config->get( 'RCWatchCategoryMembership' ) ) {
 			$defaultPreferences['watchlisthidecategorization'] = [
@@ -1139,7 +1102,7 @@ class Preferences {
 	/**
 	 * @param User $user
 	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
+	 * @param array $defaultPreferences
 	 */
 	static function searchPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 		foreach ( MWNamespace::getValidNamespaces() as $n ) {
@@ -1151,9 +1114,6 @@ class Preferences {
 
 	/**
 	 * Dummy, kept for backwards-compatibility.
-	 * @param User $user
-	 * @param IContextSource $context
-	 * @param array &$defaultPreferences
 	 */
 	static function miscPreferences( $user, IContextSource $context, &$defaultPreferences ) {
 	}
@@ -1353,7 +1313,7 @@ class Preferences {
 		$formClass = 'PreferencesForm',
 		array $remove = []
 	) {
-		$formDescriptor = self::getPreferences( $user, $context );
+		$formDescriptor = Preferences::getPreferences( $user, $context );
 		if ( count( $remove ) ) {
 			$removeKeys = array_flip( $remove );
 			$formDescriptor = array_diff_key( $formDescriptor, $removeKeys );
@@ -1377,7 +1337,7 @@ class Preferences {
 		$htmlForm->setSubmitText( $context->msg( 'saveprefs' )->text() );
 		# Used message keys: 'accesskey-preferences-save', 'tooltip-preferences-save'
 		$htmlForm->setSubmitTooltip( 'preferences-save' );
-		$htmlForm->setSubmitID( 'prefcontrol' );
+		$htmlForm->setSubmitID( 'prefsubmit' );
 		$htmlForm->setSubmitCallback( [ 'Preferences', 'tryFormSubmit' ] );
 
 		return $htmlForm;
@@ -1522,8 +1482,6 @@ class Preferences {
 		}
 
 		if ( $user->isAllowed( 'editmyoptions' ) ) {
-			$oldUserOptions = $user->getOptions();
-
 			foreach ( self::$saveBlacklist as $b ) {
 				unset( $formData[$b] );
 			}
@@ -1544,10 +1502,7 @@ class Preferences {
 				$user->setOption( $key, $value );
 			}
 
-			Hooks::run(
-				'PreferencesFormPreSave',
-				[ $formData, $form, $user, &$result, $oldUserOptions ]
-			);
+			Hooks::run( 'PreferencesFormPreSave', [ $formData, $form, $user, &$result ] );
 		}
 
 		MediaWiki\Auth\AuthManager::callLegacyAuthPlugin( 'updateExternalDB', [ $user ] );
@@ -1645,5 +1600,125 @@ class Preferences {
 		}
 
 		return $timeZoneList;
+	}
+}
+
+/** Some tweaks to allow js prefs to work */
+class PreferencesForm extends HTMLForm {
+	// Override default value from HTMLForm
+	protected $mSubSectionBeforeFields = false;
+
+	private $modifiedUser;
+
+	/**
+	 * @param User $user
+	 */
+	public function setModifiedUser( $user ) {
+		$this->modifiedUser = $user;
+	}
+
+	/**
+	 * @return User
+	 */
+	public function getModifiedUser() {
+		if ( $this->modifiedUser === null ) {
+			return $this->getUser();
+		} else {
+			return $this->modifiedUser;
+		}
+	}
+
+	/**
+	 * Get extra parameters for the query string when redirecting after
+	 * successful save.
+	 *
+	 * @return array
+	 */
+	public function getExtraSuccessRedirectParameters() {
+		return [];
+	}
+
+	/**
+	 * @param string $html
+	 * @return string
+	 */
+	function wrapForm( $html ) {
+		$html = Xml::tags( 'div', [ 'id' => 'preferences' ], $html );
+
+		return parent::wrapForm( $html );
+	}
+
+	/**
+	 * @return string
+	 */
+	function getButtons() {
+		$attrs = [ 'id' => 'mw-prefs-restoreprefs' ];
+
+		if ( !$this->getModifiedUser()->isAllowedAny( 'editmyprivateinfo', 'editmyoptions' ) ) {
+			return '';
+		}
+
+		$html = parent::getButtons();
+
+		if ( $this->getModifiedUser()->isAllowed( 'editmyoptions' ) ) {
+			$t = SpecialPage::getTitleFor( 'Preferences', 'reset' );
+
+			$linkRenderer = MediaWikiServices::getInstance()->getLinkRenderer();
+			$html .= "\n" . $linkRenderer->makeLink( $t, $this->msg( 'restoreprefs' )->text(),
+				Html::buttonAttributes( $attrs, [ 'mw-ui-quiet' ] ) );
+
+			$html = Xml::tags( 'div', [ 'class' => 'mw-prefs-buttons' ], $html );
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Separate multi-option preferences into multiple preferences, since we
+	 * have to store them separately
+	 * @param array $data
+	 * @return array
+	 */
+	function filterDataForSubmit( $data ) {
+		foreach ( $this->mFlatFields as $fieldname => $field ) {
+			if ( $field instanceof HTMLNestedFilterable ) {
+				$info = $field->mParams;
+				$prefix = isset( $info['prefix'] ) ? $info['prefix'] : $fieldname;
+				foreach ( $field->filterDataForSubmit( $data[$fieldname] ) as $key => $value ) {
+					$data["$prefix$key"] = $value;
+				}
+				unset( $data[$fieldname] );
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get the whole body of the form.
+	 * @return string
+	 */
+	function getBody() {
+		return $this->displaySection( $this->mFieldTree, '', 'mw-prefsection-' );
+	}
+
+	/**
+	 * Get the "<legend>" for a given section key. Normally this is the
+	 * prefs-$key message but we'll allow extensions to override it.
+	 * @param string $key
+	 * @return string
+	 */
+	function getLegend( $key ) {
+		$legend = parent::getLegend( $key );
+		Hooks::run( 'PreferencesGetLegend', [ $this, $key, &$legend ] );
+		return $legend;
+	}
+
+	/**
+	 * Get the keys of each top level preference section.
+	 * @return array of section keys
+	 */
+	function getPreferenceSections() {
+		return array_keys( array_filter( $this->mFieldTree, 'is_array' ) );
 	}
 }

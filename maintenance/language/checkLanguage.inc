@@ -40,6 +40,7 @@ class CheckLanguageCLI {
 	private $includeExif = false;
 
 	/**
+	 * Constructor.
 	 * @param array $options Options for script.
 	 */
 	public function __construct( array $options ) {
@@ -556,6 +557,7 @@ class CheckExtensionsCLI extends CheckLanguageCLI {
 	private $extensions;
 
 	/**
+	 * Constructor.
 	 * @param array $options Options for script.
 	 * @param string $extension The extension name (or names).
 	 */

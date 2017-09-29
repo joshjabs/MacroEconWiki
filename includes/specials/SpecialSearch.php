@@ -352,15 +352,11 @@ class SpecialSearch extends SpecialPage {
 			$out->addHTML( $dymWidget->render( $term, $textMatches ) );
 		}
 
-		$hasErrors = $textStatus && $textStatus->getErrors() !== [];
+		$out->addHTML( "<div class='searchresults'>" );
+
+		$hasErrors = $textStatus && $textStatus->getErrors();
 		$hasOtherResults = $textMatches &&
 			$textMatches->hasInterwikiResults( SearchResultSet::INLINE_RESULTS );
-
-		if ( $textMatches && $textMatches->hasInterwikiResults( SearchResultSet::SECONDARY_RESULTS ) ) {
-			$out->addHTML( '<div class="searchresults mw-searchresults-has-iw">' );
-		} else {
-			$out->addHTML( '<div class="searchresults">' );
-		}
 
 		if ( $hasErrors ) {
 			list( $error, $warning ) = $textStatus->splitByErrorType();
@@ -399,13 +395,13 @@ class SpecialSearch extends SpecialPage {
 		$mainResultWidget = new FullSearchResultWidget( $this, $linkRenderer );
 
 		if ( $search->getFeatureData( 'enable-new-crossproject-page' ) ) {
+
 			$sidebarResultWidget = new InterwikiSearchResultWidget( $this, $linkRenderer );
 			$sidebarResultsWidget = new InterwikiSearchResultSetWidget(
 				$this,
 				$sidebarResultWidget,
 				$linkRenderer,
-				MediaWikiServices::getInstance()->getInterwikiLookup(),
-				$search->getFeatureData( 'show-multimedia-search-results' )
+				MediaWikiServices::getInstance()->getInterwikiLookup()
 			);
 		} else {
 			$sidebarResultWidget = new SimpleSearchResultWidget( $this, $linkRenderer );
@@ -435,17 +431,9 @@ class SpecialSearch extends SpecialPage {
 
 		// prev/next links
 		if ( $totalRes > $this->limit || $this->offset ) {
-			// Allow matches to define the correct offset, as interleaved
-			// AB testing may require a different next page offset.
-			if ( $textMatches && $textMatches->getOffset() !== null ) {
-				$offset = $textMatches->getOffset();
-			} else {
-				$offset = $this->offset;
-			}
-
 			$prevnext = $this->getLanguage()->viewPrevNext(
 				$this->getPageTitle(),
-				$offset,
+				$this->offset,
 				$this->limit,
 				$this->powerSearchOptions() + [ 'search' => $term ],
 				$this->limit + $this->offset >= $totalRes
@@ -487,9 +475,7 @@ class SpecialSearch extends SpecialPage {
 			if ( $title->isKnown() ) {
 				$messageName = 'searchmenu-exists';
 				$linkClass = 'mw-search-exists';
-			} elseif ( ContentHandler::getForTitle( $title )->supportsDirectEditing()
-				&& $title->quickUserCan( 'create', $this->getUser() )
-			) {
+			} elseif ( $title->quickUserCan( 'create', $this->getUser() ) ) {
 				$messageName = 'searchmenu-new';
 			}
 		}
@@ -555,7 +541,7 @@ class SpecialSearch extends SpecialPage {
 	 * Extract "power search" namespace settings from the request object,
 	 * returning a list of index numbers to search.
 	 *
-	 * @param WebRequest &$request
+	 * @param WebRequest $request
 	 * @return array
 	 */
 	protected function powerSearch( &$request ) {

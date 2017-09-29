@@ -278,26 +278,12 @@ class MWNamespace {
 	}
 
 	/**
-	 * Does this namespace ever have a talk namespace?
-	 *
-	 * @deprecated since 1.30, use hasTalkNamespace() instead.
+	 * Can this namespace ever have a talk namespace?
 	 *
 	 * @param int $index Namespace index
-	 * @return bool True if this namespace either is or has a corresponding talk namespace.
+	 * @return bool
 	 */
 	public static function canTalk( $index ) {
-		return self::hasTalkNamespace( $index );
-	}
-
-	/**
-	 * Does this namespace ever have a talk namespace?
-	 *
-	 * @since 1.30
-	 *
-	 * @param int $index Namespace ID
-	 * @return bool True if this namespace either is or has a corresponding talk namespace.
-	 */
-	public static function hasTalkNamespace( $index ) {
 		return $index >= NS_MAIN;
 	}
 
@@ -370,7 +356,7 @@ class MWNamespace {
 	 */
 	public static function getSubjectNamespaces() {
 		return array_filter(
-			self::getValidNamespaces(),
+			MWNamespace::getValidNamespaces(),
 			'MWNamespace::isSubject'
 		);
 	}
@@ -383,7 +369,7 @@ class MWNamespace {
 	 */
 	public static function getTalkNamespaces() {
 		return array_filter(
-			self::getValidNamespaces(),
+			MWNamespace::getValidNamespaces(),
 			'MWNamespace::isTalk'
 		);
 	}

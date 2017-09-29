@@ -19,6 +19,7 @@
  *
  * @file
  * @ingroup FileBackend
+ * @author Aaron Schulz
  */
 use \MediaWiki\Logger\LoggerFactory;
 use MediaWiki\MediaWikiServices;

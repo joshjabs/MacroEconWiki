@@ -81,7 +81,7 @@ class SpecialPreferences extends SpecialPage {
 			$user = $this->getUser();
 		}
 
-		$htmlForm = $this->getFormObject( $user, $this->getContext() );
+		$htmlForm = Preferences::getFormObject( $user, $this->getContext() );
 		$htmlForm->setSubmitCallback( [ 'Preferences', 'tryUISubmit' ] );
 		$sectionTitles = $htmlForm->getPreferenceSections();
 
@@ -115,16 +115,6 @@ class SpecialPreferences extends SpecialPage {
 				$prefTabs )
 		);
 		$htmlForm->show();
-	}
-
-	/**
-	 * Get the preferences form to use.
-	 * @param User $user The user.
-	 * @param IContextSource $context The context.
-	 * @return PreferencesForm|HtmlForm
-	 */
-	protected function getFormObject( $user, IContextSource $context ) {
-		return Preferences::getFormObject( $user, $context );
 	}
 
 	private function showResetForm() {

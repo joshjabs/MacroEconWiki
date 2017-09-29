@@ -129,7 +129,8 @@
 
 		if ( mw.Title.newFromText( query ) ) {
 			return this.getInterwikiPrefixesPromise().then( function ( interwikiPrefixes ) {
-				var interwiki = query.substring( 0, query.indexOf( ':' ) );
+				var params,
+					interwiki = query.substring( 0, query.indexOf( ':' ) );
 				if (
 					interwiki && interwiki !== '' &&
 					interwikiPrefixes.indexOf( interwiki ) !== -1
@@ -140,7 +141,28 @@
 						} ]
 					} } ).promise( promiseAbortObject );
 				} else {
-					req = api.get( widget.getApiParams( query ) );
+					params = {
+						action: 'query',
+						prop: [ 'info', 'pageprops' ],
+						generator: 'prefixsearch',
+						gpssearch: query,
+						gpsnamespace: widget.namespace !== null ? widget.namespace : undefined,
+						gpslimit: widget.limit,
+						ppprop: 'disambiguation'
+					};
+					if ( widget.showRedirectTargets ) {
+						params.redirects = true;
+					}
+					if ( widget.showImages ) {
+						params.prop.push( 'pageimages' );
+						params.pithumbsize = 80;
+						params.pilimit = widget.limit;
+					}
+					if ( widget.showDescriptions ) {
+						params.prop.push( 'pageterms' );
+						params.wbptterms = 'description';
+					}
+					req = api.get( params );
 					promiseAbortObject.abort = req.abort.bind( req ); // TODO ew
 					return req.then( function ( ret ) {
 						if ( ret.query === undefined ) {
@@ -156,37 +178,6 @@
 			// Just pretend it returned nothing so we can show the 'invalid title' section
 			return $.Deferred().resolve( {} ).promise( promiseAbortObject );
 		}
-	};
-
-	/**
-	 * Get API params for a given query
-	 *
-	 * @param {string} query User query
-	 * @return {Object} API params
-	 */
-	mw.widgets.TitleWidget.prototype.getApiParams = function ( query ) {
-		var params = {
-			action: 'query',
-			prop: [ 'info', 'pageprops' ],
-			generator: 'prefixsearch',
-			gpssearch: query,
-			gpsnamespace: this.namespace !== null ? this.namespace : undefined,
-			gpslimit: this.limit,
-			ppprop: 'disambiguation'
-		};
-		if ( this.showRedirectTargets ) {
-			params.redirects = true;
-		}
-		if ( this.showImages ) {
-			params.prop.push( 'pageimages' );
-			params.pithumbsize = 80;
-			params.pilimit = this.limit;
-		}
-		if ( this.showDescriptions ) {
-			params.prop.push( 'pageterms' );
-			params.wbptterms = 'description';
-		}
-		return params;
 	};
 
 	/**
@@ -235,8 +226,7 @@
 				imageUrl: OO.getProp( suggestionPage, 'thumbnail', 'source' ),
 				description: OO.getProp( suggestionPage, 'terms', 'description' ),
 				// Sort index
-				index: suggestionPage.index,
-				originalData: suggestionPage
+				index: suggestionPage.index
 			};
 
 			// Throw away pages from wrong namespaces. This can happen when 'showRedirectTargets' is true
@@ -254,8 +244,7 @@
 					disambiguation: false,
 					description: mw.msg( 'mw-widgets-titleinput-description-redirect', suggestionPage.title ),
 					// Sort index, just below its target
-					index: suggestionPage.index + 0.5,
-					originalData: suggestionPage
+					index: suggestionPage.index + 0.5
 				};
 				titles.push( redirects[ i ] );
 			}
@@ -295,20 +284,10 @@
 
 		for ( i = 0, len = titles.length; i < len; i++ ) {
 			page = pageData[ titles[ i ] ] || {};
-			items.push( this.createOptionWidget( this.getOptionWidgetData( titles[ i ], page ) ) );
+			items.push( new mw.widgets.TitleOptionWidget( this.getOptionWidgetData( titles[ i ], page ) ) );
 		}
 
 		return items;
-	};
-
-	/**
-	 * Create a menu option widget with specified data
-	 *
-	 * @param {Object} data Data for option widget
-	 * @return {OO.ui.MenuOptionWidget} Data for option widget
-	 */
-	mw.widgets.TitleWidget.prototype.createOptionWidget = function ( data ) {
-		return new mw.widgets.TitleOptionWidget( data );
 	};
 
 	/**

@@ -26,9 +26,7 @@ use MediaWiki\Auth\AuthenticationResponse;
 use MediaWiki\Auth\AuthManager;
 use MediaWiki\Auth\Throttler;
 use MediaWiki\Logger\LoggerFactory;
-use MediaWiki\MediaWikiServices;
 use MediaWiki\Session\SessionManager;
-use Wikimedia\ScopedCallback;
 
 /**
  * Holds shared logic for login and account creation pages.
@@ -98,7 +96,7 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 
 	/**
 	 * Load basic request parameters for this Special page.
-	 * @param string $subPage
+	 * @param $subPage
 	 */
 	private function loadRequestParameters( $subPage ) {
 		if ( $this->mLoadedRequest ) {
@@ -214,15 +212,6 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 	 * @param string|null $subPage
 	 */
 	public function execute( $subPage ) {
-		if ( $this->mPosted ) {
-			$time = microtime( true );
-			$profilingScope = new ScopedCallback( function () use ( $time ) {
-				$time = microtime( true ) - $time;
-				$statsd = MediaWikiServices::getInstance()->getStatsdDataFactory();
-				$statsd->timing( "timing.login.ui.{$this->authAction}", $time * 1000 );
-			} );
-		}
-
 		$authManager = AuthManager::singleton();
 		$session = SessionManager::getGlobalSession();
 
@@ -772,7 +761,7 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 		if ( $this->showCreateAccountLink() ) {
 			# Pass any language selection on to the mode switch link
 			if ( $this->mLanguage ) {
-				$linkq .= '&uselang=' . urlencode( $this->mLanguage );
+				$linkq .= '&uselang=' . $this->mLanguage;
 			}
 			// Supply URL, login template creates the button.
 			$template->set( 'createOrLoginHref', $titleObj->getLocalURL( $linkq ) );
@@ -1156,11 +1145,11 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 			// Don't show a "create account" link if the user can't.
 			if ( $this->showCreateAccountLink() ) {
 				// link to the other action
-				$linkTitle = $this->getTitleFor( $this->isSignup() ? 'Userlogin' : 'CreateAccount' );
+				$linkTitle = $this->getTitleFor( $this->isSignup() ? 'Userlogin' :'CreateAccount' );
 				$linkq = $this->getReturnToQueryStringFragment();
 				// Pass any language selection on to the mode switch link
 				if ( $this->mLanguage ) {
-					$linkq .= '&uselang=' . urlencode( $this->mLanguage );
+					$linkq .= '&uselang=' . $this->mLanguage;
 				}
 				$loggedIn = $this->getUser()->isLoggedIn();
 
@@ -1199,7 +1188,7 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 
 	/**
 	 * Adds fields provided via the deprecated UserLoginForm / UserCreateForm hooks
-	 * @param array $fieldDefinitions
+	 * @param $fieldDefinitions array
 	 * @param FakeAuthTemplate $template
 	 * @return array
 	 */
@@ -1247,7 +1236,6 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 	/**
 	 * Returns a string that can be appended to the URL (without encoding) to preserve the
 	 * return target. Does not include leading '?'/'&'.
-	 * @return string
 	 */
 	protected function getReturnToQueryStringFragment() {
 		$returnto = '';
@@ -1340,8 +1328,7 @@ abstract class LoginSignupSpecialPage extends AuthManagerSpecialPage {
 	}
 
 	/**
-	 * @param array &$formDescriptor
-	 * @param array $requests
+	 * @param array $formDescriptor
 	 */
 	protected function postProcessFormDescriptor( &$formDescriptor, $requests ) {
 		// Pre-fill username (if not creating an account, T46775).
@@ -1397,11 +1384,6 @@ class FakeAuthTemplate extends BaseTemplate {
 	/**
 	 * Extensions (AntiSpoof and TitleBlacklist) call this in response to
 	 * UserCreateForm hook to add checkboxes to the create account form.
-	 * @param string $name
-	 * @param string $value
-	 * @param string $type
-	 * @param string $msg
-	 * @param string|bool $helptext
 	 */
 	public function addInputItem( $name, $value, $type, $msg, $helptext = false ) {
 		// use the same indexes as UserCreateForm just in case someone adds an item manually
@@ -1503,7 +1485,6 @@ class LoginForm extends SpecialPage {
 
 	/**
 	 * @deprecated since 1.27 - call LoginHelper::getValidErrorMessages instead.
-	 * @return array
 	 */
 	public static function getValidErrorMessages() {
 		return LoginHelper::getValidErrorMessages();
@@ -1511,8 +1492,6 @@ class LoginForm extends SpecialPage {
 
 	/**
 	 * @deprecated since 1.27 - don't use LoginForm, use AuthManager instead
-	 * @param string $username
-	 * @return array|false
 	 */
 	public static function incrementLoginThrottle( $username ) {
 		wfDeprecated( __METHOD__, "1.27" );
@@ -1524,8 +1503,6 @@ class LoginForm extends SpecialPage {
 
 	/**
 	 * @deprecated since 1.27 - don't use LoginForm, use AuthManager instead
-	 * @param string $username
-	 * @return bool|int
 	 */
 	public static function incLoginThrottle( $username ) {
 		wfDeprecated( __METHOD__, "1.27" );
@@ -1535,8 +1512,6 @@ class LoginForm extends SpecialPage {
 
 	/**
 	 * @deprecated since 1.27 - don't use LoginForm, use AuthManager instead
-	 * @param string $username
-	 * @return void
 	 */
 	public static function clearLoginThrottle( $username ) {
 		wfDeprecated( __METHOD__, "1.27" );
@@ -1573,7 +1548,6 @@ class LoginForm extends SpecialPage {
 
 	/**
 	 * @deprecated since 1.27 - don't use LoginForm, use AuthManager instead
-	 * @return string
 	 */
 	public static function getCreateaccountToken() {
 		wfDeprecated( __METHOD__, '1.27' );

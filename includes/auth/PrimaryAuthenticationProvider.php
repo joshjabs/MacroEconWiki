@@ -81,7 +81,7 @@ interface PrimaryAuthenticationProvider extends AuthenticationProvider {
 	const TYPE_NONE = 'none';
 
 	/**
-	 * @inheritDoc
+	 * {@inheritdoc}
 	 *
 	 * Of the requests returned by this method, exactly one should have
 	 * {@link AuthenticationRequest::$required} set to REQUIRED.

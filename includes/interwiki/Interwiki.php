@@ -88,16 +88,16 @@ class Interwiki {
 	 * @since 1.26
 	 */
 	public static function invalidateCache( $prefix ) {
-		MediaWikiServices::getInstance()->getInterwikiLookup()->invalidateCache( $prefix );
+		return MediaWikiServices::getInstance()->getInterwikiLookup()->invalidateCache( $prefix );
 	}
 
 	/**
-	 * Returns all interwiki prefix definitions.
+	 * Returns all interwiki prefixes
 	 *
 	 * @deprecated since 1.28, unused. Use InterwikiLookup instead.
 	 *
 	 * @param string|null $local If set, limits output to local/non-local interwikis
-	 * @return array[] List of interwiki rows
+	 * @return array List of prefixes
 	 * @since 1.19
 	 */
 	public static function getAllPrefixes( $local = null ) {

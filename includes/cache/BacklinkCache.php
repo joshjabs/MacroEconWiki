@@ -20,6 +20,7 @@
  *
  * @file
  * @author Tim Starling
+ * @author Aaron Schulz
  * @copyright © 2009, Tim Starling, Domas Mituzas
  * @copyright © 2010, Max Sem
  * @copyright © 2011, Antoine Musso
@@ -174,6 +175,7 @@ class BacklinkCache {
 	 * @return ResultWrapper
 	 */
 	protected function queryLinks( $table, $startId, $endId, $max, $select = 'all' ) {
+
 		$fromField = $this->getPrefix( $table ) . '_from';
 
 		if ( !$startId && !$endId && is_infinite( $max )

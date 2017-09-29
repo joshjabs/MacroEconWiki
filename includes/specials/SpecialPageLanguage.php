@@ -49,20 +49,12 @@ class SpecialPageLanguage extends FormSpecialPage {
 	protected function getFormFields() {
 		// Get default from the subpage of Special page
 		$defaultName = $this->par;
-		$title = $defaultName ? Title::newFromText( $defaultName ) : null;
-		if ( $title ) {
-			$defaultPageLanguage =
-				ContentHandler::getForTitle( $title )->getPageLanguage( $title );
-			$hasCustomLanguageSet = !$defaultPageLanguage->equals( $title->getPageLanguage() );
-		} else {
-			$hasCustomLanguageSet = false;
-		}
 
 		$page = [];
 		$page['pagename'] = [
 			'type' => 'title',
 			'label-message' => 'pagelang-name',
-			'default' => $title ? $title->getPrefixedText() : $defaultName,
+			'default' => $defaultName,
 			'autofocus' => $defaultName === null,
 			'exists' => true,
 		];
@@ -76,7 +68,7 @@ class SpecialPageLanguage extends FormSpecialPage {
 			'id' => 'mw-pl-options',
 			'type' => 'radio',
 			'options' => $selectoptions,
-			'default' => $hasCustomLanguageSet ? 2 : 1
+			'default' => 1
 		];
 
 		// Building a language selector
@@ -94,9 +86,7 @@ class SpecialPageLanguage extends FormSpecialPage {
 			'type' => 'select',
 			'options' => $options,
 			'label-message' => 'pagelang-language',
-			'default' => $title ?
-				$title->getPageLanguage()->getCode() :
-				$this->getConfig()->get( 'LanguageCode' ),
+			'default' => $this->getConfig()->get( 'LanguageCode' ),
 		];
 
 		// Allow user to enter a comment explaining the change
@@ -143,16 +133,6 @@ class SpecialPageLanguage extends FormSpecialPage {
 			$title = Title::newFromTextThrow( $pageName );
 		} catch ( MalformedTitleException $ex ) {
 			return Status::newFatal( $ex->getMessageObject() );
-		}
-
-		// Check permissions and make sure the user has permission to edit the page
-		$errors = $title->getUserPermissionsErrors( 'edit', $this->getUser() );
-
-		if ( $errors ) {
-			$out = $this->getOutput();
-			$wikitext = $out->formatPermissionsErrorMessage( $errors );
-			// Hack to get our wikitext parsed
-			return Status::newFatal( new RawMessage( '$1', [ $wikitext ] ) );
 		}
 
 		// Url to redirect to after the operation

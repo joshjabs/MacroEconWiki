@@ -52,8 +52,8 @@ class NukeNS extends Maintenance {
 
 	public function execute() {
 		$ns = $this->getOption( 'ns', NS_MEDIAWIKI );
-		$delete = $this->hasOption( 'delete' );
-		$all = $this->hasOption( 'all' );
+		$delete = $this->getOption( 'delete', false );
+		$all = $this->getOption( 'all', false );
 		$dbw = $this->getDB( DB_MASTER );
 		$this->beginTransaction( $dbw, __METHOD__ );
 

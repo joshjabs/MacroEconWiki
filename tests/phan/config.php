@@ -299,17 +299,17 @@ return [
 	'suppress_issue_types' => [
 		// approximate error count: 8
 		"PhanDeprecatedClass",
-		// approximate error count: 415
+		// approximate error count: 441
 		"PhanDeprecatedFunction",
-		// approximate error count: 25
+		// approximate error count: 24
 		"PhanDeprecatedProperty",
-		// approximate error count: 11
+		// approximate error count: 12
 		"PhanParamReqAfterOpt",
-		// approximate error count: 888
+		// approximate error count: 748
 		"PhanParamSignatureMismatch",
 		// approximate error count: 7
 		"PhanParamSignatureMismatchInternal",
-		// approximate error count: 125
+		// approximate error count: 308
 		"PhanParamTooMany",
 		// approximate error count: 3
 		"PhanParamTooManyInternal",
@@ -317,29 +317,29 @@ return [
 		"PhanRedefineFunctionInternal",
 		// approximate error count: 2
 		"PhanTraitParentReference",
-		// approximate error count: 3
+		// approximate error count: 4
 		"PhanTypeComparisonFromArray",
 		// approximate error count: 3
 		"PhanTypeInvalidRightOperand",
-		// approximate error count: 218
+		// approximate error count: 563
 		"PhanTypeMismatchArgument",
-		// approximate error count: 13
+		// approximate error count: 39
 		"PhanTypeMismatchArgumentInternal",
-		// approximate error count: 14
+		// approximate error count: 16
 		"PhanTypeMismatchForeach",
-		// approximate error count: 56
+		// approximate error count: 63
 		"PhanTypeMismatchProperty",
-		// approximate error count: 74
+		// approximate error count: 95
 		"PhanTypeMismatchReturn",
 		// approximate error count: 11
 		"PhanTypeMissingReturn",
 		// approximate error count: 5
 		"PhanTypeNonVarPassByRef",
-		// approximate error count: 32
+		// approximate error count: 27
 		"PhanUndeclaredConstant",
-		// approximate error count: 233
+		// approximate error count: 185
 		"PhanUndeclaredMethod",
-		// approximate error count: 1224
+		// approximate error count: 1342
 		"PhanUndeclaredProperty",
 		// approximate error count: 3
 		"PhanUndeclaredStaticMethod",

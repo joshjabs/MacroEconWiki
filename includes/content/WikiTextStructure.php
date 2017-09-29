@@ -59,6 +59,7 @@ class WikiTextStructure {
 	];
 
 	/**
+	 * WikiTextStructure constructor.
 	 * @param ParserOutput $parserOutput
 	 */
 	public function __construct( ParserOutput $parserOutput ) {

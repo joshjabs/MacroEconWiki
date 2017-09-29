@@ -1,12 +1,12 @@
 /*!
- * OOjs UI v0.23.2
+ * OOjs UI v0.21.1
  * https://www.mediawiki.org/wiki/OOjs_UI
  *
  * Copyright 2011–2017 OOjs UI Team and other contributors.
  * Released under the MIT license
  * http://oojs.mit-license.org
  *
- * Date: 2017-09-26T20:18:42Z
+ * Date: 2017-04-18T23:32:49Z
  */
 ( function ( OO ) {
 
@@ -337,7 +337,6 @@ OO.ui.Toolbar = function OoUiToolbar( toolFactory, toolGroupFactory, config ) {
 	this.$bar
 		.addClass( 'oo-ui-toolbar-bar' )
 		.append( this.$group, '<div style="clear:both"></div>' );
-	// Possible classes: oo-ui-toolbar-position-top, oo-ui-toolbar-position-bottom
 	this.$element.addClass( 'oo-ui-toolbar oo-ui-toolbar-position-' + this.position ).append( this.$bar );
 };
 
@@ -630,8 +629,10 @@ OO.ui.Tool = function OoUiTool( toolGroup, config ) {
 		.attr( 'role', 'button' );
 	this.$element
 		.data( 'oo-ui-tool', this )
-		.addClass( 'oo-ui-tool' )
-		.addClass( 'oo-ui-tool-name-' + this.constructor.static.name.replace( /^([^/]+)\/([^/]+).*$/, '$1-$2' ) )
+		.addClass(
+			'oo-ui-tool ' + 'oo-ui-tool-name-' +
+			this.constructor.static.name.replace( /^([^\/]+)\/([^\/]+).*$/, '$1-$2' )
+		)
 		.toggleClass( 'oo-ui-tool-with-label', this.constructor.static.displayBothIconAndLabel )
 		.append( this.$link );
 	this.setTitle( config.title || this.constructor.static.title );
@@ -1037,13 +1038,13 @@ OO.ui.ToolGroup.prototype.onMouseKeyDown = function ( e ) {
 		!this.isDisabled() &&
 		( e.which === OO.ui.MouseButtons.LEFT || e.which === OO.ui.Keys.SPACE || e.which === OO.ui.Keys.ENTER )
 	) {
-		this.pressed = this.findTargetTool( e );
+		this.pressed = this.getTargetTool( e );
 		if ( this.pressed ) {
 			this.pressed.setActive( true );
 			this.getElementDocument().addEventListener( 'mouseup', this.onCapturedMouseKeyUpHandler, true );
 			this.getElementDocument().addEventListener( 'keyup', this.onCapturedMouseKeyUpHandler, true );
-			return false;
 		}
+		return false;
 	}
 };
 
@@ -1068,7 +1069,7 @@ OO.ui.ToolGroup.prototype.onCapturedMouseKeyUp = function ( e ) {
  * @param {MouseEvent|KeyboardEvent} e Mouse up or key up event
  */
 OO.ui.ToolGroup.prototype.onMouseKeyUp = function ( e ) {
-	var tool = this.findTargetTool( e );
+	var tool = this.getTargetTool( e );
 
 	if (
 		!this.isDisabled() && this.pressed && this.pressed === tool &&
@@ -1090,7 +1091,7 @@ OO.ui.ToolGroup.prototype.onMouseKeyUp = function ( e ) {
  * @param {jQuery.Event} e Mouse over or focus event
  */
 OO.ui.ToolGroup.prototype.onMouseOverFocus = function ( e ) {
-	var tool = this.findTargetTool( e );
+	var tool = this.getTargetTool( e );
 
 	if ( this.pressed && this.pressed === tool ) {
 		this.pressed.setActive( true );
@@ -1104,7 +1105,7 @@ OO.ui.ToolGroup.prototype.onMouseOverFocus = function ( e ) {
  * @param {jQuery.Event} e Mouse out or blur event
  */
 OO.ui.ToolGroup.prototype.onMouseOutBlur = function ( e ) {
-	var tool = this.findTargetTool( e );
+	var tool = this.getTargetTool( e );
 
 	if ( this.pressed && this.pressed === tool ) {
 		this.pressed.setActive( false );
@@ -1121,7 +1122,7 @@ OO.ui.ToolGroup.prototype.onMouseOutBlur = function ( e ) {
  * @param {jQuery.Event} e
  * @return {OO.ui.Tool|null} Tool, `null` if none was found
  */
-OO.ui.ToolGroup.prototype.findTargetTool = function ( e ) {
+OO.ui.ToolGroup.prototype.getTargetTool = function ( e ) {
 	var tool,
 		$item = $( e.target ).closest( '.oo-ui-tool-link' );
 
@@ -1890,7 +1891,7 @@ OO.ui.PopupToolGroup.prototype.onBlur = function ( e ) {
 OO.ui.PopupToolGroup.prototype.onMouseKeyUp = function ( e ) {
 	// Only close toolgroup when a tool was actually selected
 	if (
-		!this.isDisabled() && this.pressed && this.pressed === this.findTargetTool( e ) &&
+		!this.isDisabled() && this.pressed && this.pressed === this.getTargetTool( e ) &&
 		( e.which === OO.ui.MouseButtons.LEFT || e.which === OO.ui.Keys.SPACE || e.which === OO.ui.Keys.ENTER )
 	) {
 		this.setActive( false );
@@ -2362,5 +2363,3 @@ OO.ui.MenuToolGroup.prototype.onUpdateState = function () {
 };
 
 }( OO ) );
-
-//# sourceMappingURL=oojs-ui-toolbars.js.map
